@@ -85,9 +85,17 @@ def widget_single_variable(enable_js: bool=True, stn_size: int=1000):
                               ' rectangle to the query boxes below',layout=ipyw.Layout(width='350px'))
 
    # Create station plotting button
-   stn_button = ipyw.Button(description='Show station locations near drawn region',
+   stn_button = ipyw.Button(description='Show station locations near drawn region*',
                             layout=ipyw.Layout(width='350px'))      
- 
+
+   # Create station query subset by time buttons
+   stn_button_ftr_text = ipyw.HTML(value='<h4 style="font-weight:normal;margin:2px 0 0 0;">*Filter '+
+                                         'displayed stations to include date range manually entered'+
+                                         ' below</h4>',layout=ipyw.Layout(width='430px'))
+   stn_button_ftr1 = ipyw.Text(placeholder='ex. 2000-01-01',layout=ipyw.Layout(width='130px'))
+   stn_button_ftr2 = ipyw.Text(placeholder=f'ex. {pd.Timestamp.today().date()}',
+                               layout=ipyw.Layout(width='130px'))
+
    # Define location and lat/lon bounds
    txt_query = ipyw.HTML(value='<h2>Define your query region</h2>',
                          layout=ipyw.Layout(margin='0 0 -10px 0'))
@@ -131,7 +139,8 @@ def widget_single_variable(enable_js: bool=True, stn_size: int=1000):
        stns = pd.DataFrame({'stn': meta.apply(lambda row: f"{row['sids']}: {row['name']}, {row['state']} "+
                              f"({row['sids_type']})\n{var_dpdn.value}: {row['sdate']}, {row['edate']}\n"
                              f"(lat) {row['lat']} (lon) {row['lon']}",axis=1),
-                            'lat': meta['lat'],'lon': meta['lon']})
+                            'lat': meta['lat'],'lon': meta['lon'], 
+                            'sdate': pd.to_datetime(meta['sdate']),'edate': pd.to_datetime(meta['edate'])})
        # Set nlat.value, etc. as the drawn rectangle's coordinates                              
        try: 
            nlat_val = round(m.controls[2].data[0]['geometry']['coordinates'][0][1][1],3)
@@ -143,6 +152,15 @@ def widget_single_variable(enable_js: bool=True, stn_size: int=1000):
        # Filter by lat/lon
        bbox_stns = stns[(stns['lat'] >= (slat_val - 0.5)) & (stns['lat'] <= (nlat_val + 0.5)) & 
                         (stns['lon'] >= (wlon_val - 1)) & (stns['lon'] <= (elon_val + 1))   ]
+       # Apply sdate/edate filter if entered by user
+       sftr = pd.to_datetime(stn_button_ftr1.value) if stn_button_ftr1.value else None
+       eftr = pd.to_datetime(stn_button_ftr2.value) if stn_button_ftr2.value else None
+       if sftr is not None and eftr is not None:
+          bbox_stns = bbox_stns[(bbox_stns['sdate'] <= sftr) & (bbox_stns['edate'] >= eftr)]
+       elif sftr is not None: 
+          bbox_stns = bbox_stns[bbox_stns['edate'] >= eftr]
+       elif eftr is not None:
+          bbox_stns = bbox_stns[bbox_stns['sdate'] <= sftr]
        # Add markers based on metadata
        markers = []
        for name, lat, lon in bbox_stns[['stn','lat','lon']].iloc[:,:].values:
@@ -166,7 +184,8 @@ def widget_single_variable(enable_js: bool=True, stn_size: int=1000):
            
            # Choose which widgets to employ based on variable
            if var_dpdn.value == 'maxt':
-               wid_opts = ipyw.Dropdown(options=['Annual Cycle','Time Series'],value='Annual Cycle')
+               wid_opts = ipyw.Dropdown(options=['Annual Cycle','Time Series','Spatial Map'],
+                                        value='Annual Cycle')
                txt_opts = ipyw.HTML(value='<h3>Plot options for T<sub>MAX</sub></h3>')
                def interactive_widget(opts):
                    if opts == 'Annual Cycle':
@@ -174,6 +193,9 @@ def widget_single_variable(enable_js: bool=True, stn_size: int=1000):
                                            nlat=nlat.value,slat=slat.value,wlon=wlon.value,elon=elon.value)
                    if opts == 'Time Series':
                        widgets.timeseries_tmax_widget(var=var,meta=meta,location_name=location_name.value,
+                                           nlat=nlat.value,slat=slat.value,wlon=wlon.value,elon=elon.value)
+                   if opts == 'Spatial Map':
+                       widgets.spatialmap_tmax_widget(var=var,meta=meta,location_name=location_name.value,
                                            nlat=nlat.value,slat=slat.value,wlon=wlon.value,elon=elon.value)
  
            if var_dpdn.value == 'mint':
@@ -188,7 +210,7 @@ def widget_single_variable(enable_js: bool=True, stn_size: int=1000):
                                            nlat=nlat.value,slat=slat.value,wlon=wlon.value,elon=elon.value)             
  
            if var_dpdn.value == 'pcpn':
-               wid_opts = ipyw.Dropdown(options=['Annual Cycle','Cumulative','Time Series','Spatial Map (beta)'],
+               wid_opts = ipyw.Dropdown(options=['Annual Cycle','Cumulative','Time Series','Spatial Map'],
                                         value='Annual Cycle')
                txt_opts = ipyw.HTML(value='<h3>Plot options for Rain</h3>')
                def interactive_widget(opts):
@@ -201,7 +223,7 @@ def widget_single_variable(enable_js: bool=True, stn_size: int=1000):
                    if opts == 'Time Series':                      
                        widgets.timeseries_pcpn_widget(var=var,meta=meta,location_name=location_name.value,
                                            nlat=nlat.value,slat=slat.value,wlon=wlon.value,elon=elon.value)
-                   if opts == 'Spatial Map (beta)':
+                   if opts == 'Spatial Map':
                        widgets.spatialmap_pcpn_widget(var=var,meta=meta,location_name=location_name.value,
                                            nlat=nlat.value,slat=slat.value,wlon=wlon.value,elon=elon.value)
 
@@ -273,6 +295,8 @@ def widget_single_variable(enable_js: bool=True, stn_size: int=1000):
                       ipyw.VBox([txt_var,var_dpdn],layout=ipyw.Layout(align_items='center')),
                       ipyw.VBox([txt_M,txt_m,txt_x,latlon_lbl,map_output],layout=ipyw.Layout(align_items='center')),
                       ipyw.VBox([ipyw.HBox([coord_button,stn_button])],layout=ipyw.Layout(align_items='center')),
+                      ipyw.VBox([ipyw.HBox([stn_button_ftr_text])],layout=ipyw.Layout(align_items='center')),
+                      ipyw.VBox([ipyw.HBox([stn_button_ftr1,stn_button_ftr2])],layout=ipyw.Layout(align_items='center')),
                       ipyw.VBox([txt_query,location_name,nlat,slat,wlon,elon,submit_box],
                                 layout=ipyw.Layout(align_items='center')),
                       ],layout=ipyw.Layout(display='flex',flex_flow='column',
