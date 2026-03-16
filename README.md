@@ -1,7 +1,7 @@
 # ClimateDataVisualizer
 Visualizing Earth's climate history at <a href="http://climate-data-viz.com">climate-data-viz.com</a>
 
-Author: Alex Thompson (ajthompson@wustl.edu, alexjt@umich.edu) <br/>
+Author: Alex Thompson (alexjt@umich.edu) <br/>
 Latest Update: 2023-12-02 <br/>
 
 # Installation
