@@ -2,7 +2,7 @@
 Visualizing Earth's climate history at <a href="http://climate-data-viz.com">climate-data-viz.com</a>
 
 Author: Alex Thompson (alexjt@umich.edu) <br/>
-Latest Update: 2023-12-02 <br/>
+Latest Update: 2026-03-16 <br/>
 
 # Installation
 This repository is not yet on pypi. To use, download directory 'ClimateDataVisualizer' and place in your working directory. 
