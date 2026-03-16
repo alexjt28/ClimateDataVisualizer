@@ -36,7 +36,8 @@ import warnings
 #================================================================================================================
 
 def annualcycle_tmax_plot(var,meta,location_name,nlat,slat,wlon,elon,syr,eyr,num_stn,iyr,minbuff,maxbuff,
-                          majtick,mintick,incl_hist,incl_year,incl_info,incl_map,img_tile,lbl_buff,ext_buff):
+                          majtick,mintick,incl_hist,incl_year,incl_date,disp_mon,disp_day,lbloff,incl_info,
+                          incl_map,img_tile,lbl_buff,ext_buff):
 
     ############################################################################################################# 
     # Average data by day and year 
@@ -147,6 +148,20 @@ def annualcycle_tmax_plot(var,meta,location_name,nlat,slat,wlon,elon,syr,eyr,num
                              framealpha=0.,bbox_to_anchor=(0,0,0.13,0.08),
                              prop={'weight': 'bold', 'size': 8})
 
+    if incl_date == True:
+        # Display data
+        disp_date = pd.to_datetime(str(plt_yr)+'-'+disp_mon+'-'+disp_day)
+        disp_val = var_dy.loc[(var_dy['month'] == int(disp_mon)) & (var_dy['day'] == int(disp_day)),str(iyr)
+                              ].values[0]
+        ax.plot(disp_date,disp_val,'o',c='b',markersize=2,zorder=1000)
+    
+        # Display text
+        ha = 'left' if int(disp_mon) == 1 else ('right' if int(disp_mon) == 12 else 'center')
+        montxt = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][int(disp_mon)-1]
+        ax.text(disp_date,disp_val+lbloff,montxt+' '+disp_day+', '+str(iyr)+'\n'+str(round(disp_val,1))+'°F',
+                bbox=dict(boxstyle='square',pad=0.05,edgecolor='none',facecolor='w',alpha=0.8), # background box
+                fontsize=5,weight='bold',ha=ha,zorder=1000)
+        
     ############################################################################################################# 
     # Features to include? Can toggle on and off in parameters
     ############################################################################################################# 
@@ -167,7 +182,7 @@ def annualcycle_tmax_plot(var,meta,location_name,nlat,slat,wlon,elon,syr,eyr,num
     # Title and text
     ############################################################################################################# 
 
-    ax.text(0.75,0.02,r'$\bf{IMAGE:}$ Alex Thompson (@ajtclimate)'+'\n'+r'$\bf{DATA:}$'+
+    ax.text(0.75,0.02,r'$\bf{IMAGE:}$ climate-data-viz.com'+'\n'+r'$\bf{DATA:}$'+
                    ' NOAA ACIS (http://data.rcc-acis.org)',ha='left',fontsize=5,transform=ax.transAxes)
     ax.set_title('Daily High Temperature in '+location_name,loc='center',fontsize=14,pad=5,
                  weight='bold');
@@ -193,7 +208,8 @@ def annualcycle_tmax_plot(var,meta,location_name,nlat,slat,wlon,elon,syr,eyr,num
 #================================================================================================================
 
 def annualcycle_tmin_plot(var,meta,location_name,nlat,slat,wlon,elon,syr,eyr,num_stn,iyr,minbuff,maxbuff,
-                          majtick,mintick,incl_hist,incl_year,incl_info,incl_map,img_tile,lbl_buff,ext_buff):
+                          majtick,mintick,incl_hist,incl_year,incl_date,disp_mon,disp_day,lbloff,incl_info,
+                          incl_map,img_tile,lbl_buff,ext_buff):
 
     ############################################################################################################# 
     # Average data by day and year 
@@ -304,6 +320,20 @@ def annualcycle_tmin_plot(var,meta,location_name,nlat,slat,wlon,elon,syr,eyr,num
                              framealpha=0.,bbox_to_anchor=(0,0,0.13,0.08),
                              prop={'weight': 'bold', 'size': 8})
 
+    if incl_date == True:
+        # Display data
+        disp_date = pd.to_datetime(str(plt_yr)+'-'+disp_mon+'-'+disp_day)
+        disp_val = var_dy.loc[(var_dy['month'] == int(disp_mon)) & (var_dy['day'] == int(disp_day)),str(iyr)
+                              ].values[0]
+        ax.plot(disp_date,disp_val,'o',c='r',markersize=2,zorder=1000)
+
+        # Display text
+        ha = 'left' if int(disp_mon) == 1 else ('right' if int(disp_mon) == 12 else 'center')
+        montxt = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][int(disp_mon)-1]
+        ax.text(disp_date,disp_val+lbloff,montxt+' '+disp_day+', '+str(iyr)+'\n'+str(round(disp_val,1))+'°F',
+                bbox=dict(boxstyle='square',pad=0.05,edgecolor='none',facecolor='w',alpha=0.8), # background box
+                fontsize=5,weight='bold',ha=ha,va='top',zorder=1000)
+        
     ############################################################################################################# 
     # Features to include? Can toggle on and off in parameters
     ############################################################################################################# 
@@ -324,7 +354,7 @@ def annualcycle_tmin_plot(var,meta,location_name,nlat,slat,wlon,elon,syr,eyr,num
     # Title and text
     ############################################################################################################# 
 
-    ax.text(0.75,0.02,r'$\bf{IMAGE:}$ Alex Thompson (@ajtclimate)'+'\n'+r'$\bf{DATA:}$'+
+    ax.text(0.75,0.02,r'$\bf{IMAGE:}$ climate-data-viz.com'+'\n'+r'$\bf{DATA:}$'+
                    ' NOAA ACIS (http://data.rcc-acis.org)',ha='left',fontsize=5,transform=ax.transAxes)
     ax.set_title('Daily Low Temperature in '+location_name,loc='center',fontsize=14,pad=5,
                  weight='bold');
@@ -350,7 +380,8 @@ def annualcycle_tmin_plot(var,meta,location_name,nlat,slat,wlon,elon,syr,eyr,num
 #================================================================================================================
 
 def annualcycle_pcpn_plot(var,meta,location_name,nlat,slat,wlon,elon,rain_type,nday,syr,eyr,num_stn,iyr,
-              minbuff,maxbuff,majtick,mintick,incl_hist,incl_year,incl_map,img_tile,lbl_buff,ext_buff):
+                          minbuff,maxbuff,majtick,mintick,incl_hist,incl_year,incl_date,disp_mon,disp_day,
+                          lbloff,incl_map,img_tile,lbl_buff,ext_buff):
                          
     ###################################################################################################
     # Average data by day and year 
@@ -411,8 +442,11 @@ def annualcycle_pcpn_plot(var,meta,location_name,nlat,slat,wlon,elon,rain_type,n
 
     if incl_hist == True:
 
+        # Suppress all-NaN axis warning
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        
         if rain_type == 'all' or rain_type == 'rain':
-
+            
             # MEAN
             var_avg = np.nanmean(var_dy.iloc[:,var_dy.columns.get_loc(str(syr)):\
                                               var_dy.columns.get_loc(str(eyr))+1],axis=1)
@@ -501,6 +535,23 @@ def annualcycle_pcpn_plot(var,meta,location_name,nlat,slat,wlon,elon,rain_type,n
                              (str(iyr),''),framealpha=0.,bbox_to_anchor=(0,0,0.13,1.0),
                              prop={'weight': 'bold', 'size': 8})
 
+    if incl_date == True:
+        # Display data
+        disp_date = pd.to_datetime(str(plt_yr)+'-'+disp_mon+'-'+disp_day)
+        disp_val = var_dy.loc[(var_dy['month'] == int(disp_mon)) & (var_dy['day'] == int(disp_day)),str(iyr)
+                              ].values[0]
+        disp_val = 0. if np.isnan(disp_val) else disp_val # if disp_val is NaN, set to zero
+        mx,lx,bx = ax.stem(disp_date,disp_val,linefmt='r',basefmt=' ',markerfmt='o')
+        plt.setp(mx,markersize=1)
+        plt.setp(lx,linewidth=0.5)
+    
+        # Display text
+        ha = 'left' if int(disp_mon) == 1 else ('right' if int(disp_mon) == 12 else 'center')
+        montxt = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][int(disp_mon)-1]
+        ax.text(disp_date,disp_val+lbloff,montxt+' '+disp_day+', '+str(iyr)+'\n'+str(round(disp_val,2))+' in',
+                bbox=dict(boxstyle='square',pad=0.05,edgecolor='none',facecolor='w',alpha=0.8), # background box
+                fontsize=5,weight='bold',ha=ha,zorder=1000)
+        
     ############################################################################################################# 
     # Features to include? Can toggle on and off in parameters
     ############################################################################################################# 
@@ -515,7 +566,7 @@ def annualcycle_pcpn_plot(var,meta,location_name,nlat,slat,wlon,elon,rain_type,n
     ############################################################################################################# 
 
     ax.text(1.,-0.12,r'$\bf{DATA:}$'+' NOAA ACIS (http://data.rcc-acis.org)'+\
-                     r'$\ \ \bf{IMAGE:}$ Alex Thompson (@ajtclimate)',
+                     r'$\ \ \bf{IMAGE:}$ climate-data-viz.com',
                      ha='right',va='center',fontsize=5,transform=ax.transAxes);
     ax.set_title('Daily Rainfall in '+location_name,loc='center',fontsize=14,pad=5,
                  weight='bold');
@@ -549,7 +600,8 @@ def annualcycle_pcpn_plot(var,meta,location_name,nlat,slat,wlon,elon,rain_type,n
 #================================================================================================================
 
 def annualcycle_snow_plot(var,meta,location_name,nlat,slat,wlon,elon,snow_type,nday,syr,eyr,num_stn,iyr,
-              minbuff,maxbuff,majtick,mintick,incl_hist,incl_year,incl_map,img_tile,lbl_buff,ext_buff):
+                          minbuff,maxbuff,majtick,mintick,incl_hist,incl_year,incl_date,disp_mon,disp_day,
+                          lbloff,incl_map,img_tile,lbl_buff,ext_buff):
 
     ###################################################################################################
     # Average data by day and year 
@@ -610,6 +662,9 @@ def annualcycle_snow_plot(var,meta,location_name,nlat,slat,wlon,elon,snow_type,n
     ############################################################################################################# 
 
     if incl_hist == True:
+        
+        # Suppress all-NaN axis warning
+        warnings.simplefilter("ignore", category=RuntimeWarning)
         
         if snow_type == 'all' or snow_type == 'snow':
     
@@ -699,6 +754,23 @@ def annualcycle_snow_plot(var,meta,location_name,nlat,slat,wlon,elon,snow_type,n
                              (str(iyr),''),framealpha=0.,bbox_to_anchor=(0,0,0.525,0.85),
                              prop={'weight': 'bold', 'size': 8})
 
+    if incl_date == True:
+        # Display data
+        disp_date = pd.to_datetime(str(plt_yr)+'-'+disp_mon+'-'+disp_day)
+        disp_val = var_dy.loc[(var_dy['month'] == int(disp_mon)) & (var_dy['day'] == int(disp_day)),str(iyr)
+                              ].values[0]
+        disp_val = 0. if np.isnan(disp_val) else disp_val # if disp_val is NaN, set to zero
+        mx,lx,bx = ax.stem(disp_date,disp_val,linefmt='r',basefmt=' ',markerfmt='o')
+        plt.setp(mx,markersize=1)
+        plt.setp(lx,linewidth=0.5)
+    
+        # Display text
+        ha = 'left' if int(disp_mon) == 1 else ('right' if int(disp_mon) == 12 else 'center')
+        montxt = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][int(disp_mon)-1]
+        ax.text(disp_date,disp_val+lbloff,montxt+' '+disp_day+', '+str(iyr)+'\n'+str(round(disp_val,2))+' in',
+                bbox=dict(boxstyle='square',pad=0.05,edgecolor='none',facecolor='w',alpha=0.8), # background box
+                fontsize=5,weight='bold',ha=ha,zorder=1000)
+        
     ############################################################################################################# 
     # Features to include? Can toggle on and off in parameters
     ############################################################################################################# 
@@ -713,7 +785,7 @@ def annualcycle_snow_plot(var,meta,location_name,nlat,slat,wlon,elon,snow_type,n
     ############################################################################################################# 
 
     ax.text(1.,-0.12,r'$\bf{DATA:}$'+' NOAA ACIS (http://data.rcc-acis.org)'+\
-                     r'$\ \ \bf{IMAGE:}$ Alex Thompson (@ajtclimate)',
+                     r'$\ \ \bf{IMAGE:}$ climate-data-viz.com',
                      ha='right',va='center',fontsize=5,transform=ax.transAxes);
     ax.set_title('Daily Snowfall in '+location_name,loc='center',fontsize=14,pad=5,
                  weight='bold');
@@ -888,7 +960,7 @@ def cumulative_pcpn_plot(var,meta,location_name,nlat,slat,wlon,elon,syr,eyr,stat
     ############################################################################################################# 
 
     ax.text(1.,0.025,r'$\bf{DATA:}$'+' NOAA ACIS (http://data.rcc-acis.org)'+\
-                     r'$\ \ \bf{IMAGE:}$ Alex Thompson (@ajtclimate)',
+                     r'$\ \ \bf{IMAGE:}$ climate-data-viz.com',
                      ha='right',va='center',fontsize=5,transform=ax.transAxes);
     ax.set_title('Cumulative Rainfall in '+location_name,loc='center',fontsize=14,pad=5,
                  weight='bold');
@@ -1047,7 +1119,7 @@ def cumulative_snow_plot(var,meta,location_name,nlat,slat,wlon,elon,syr,eyr,stat
     ############################################################################################################# 
 
     ax.text(1.,-0.12,r'$\bf{DATA:}$'+' NOAA ACIS (http://data.rcc-acis.org)'+\
-                     r'$\ \ \bf{IMAGE:}$ Alex Thompson (@ajtclimate)',
+                     r'$\ \ \bf{IMAGE:}$ climate-data-viz.com',
                      ha='right',va='center',fontsize=5,transform=ax.transAxes);
     ax.set_title('Cumulative Snowfall in '+location_name,loc='center',fontsize=14,pad=5,
                  weight='bold');
@@ -1207,7 +1279,7 @@ def timeseries_tmax_plot(var,meta,location_name,nlat,slat,wlon,elon,month1,month
     ############################################################################################################# 
 
     ax.text(1,0.015,r'$\bf{DATA:}$ NOAA ACIS (http://data.rcc-acis.org) '+
-                   r' $\bf{IMAGE:}$ Alex Thompson (@ajtclimate)',ha='right',fontsize=5,transform=ax.transAxes)    
+                   r' $\bf{IMAGE:}$ climate-data-viz.com',ha='right',fontsize=5,transform=ax.transAxes)    
     season = f'{month1}-{month2}' if len(monthi) < 12 and month1 != month2 else (
                                                                         month1 if month1 == month2 else 'Annual')
     ax.set_title(season+' Daily High Temperature in '+location_name,loc='center',fontsize=14,pad=5,weight='bold');
@@ -1368,7 +1440,7 @@ def timeseries_tmin_plot(var,meta,location_name,nlat,slat,wlon,elon,month1,month
     ############################################################################################################# 
 
     ax.text(1,0.015,r'$\bf{DATA:}$ NOAA ACIS (http://data.rcc-acis.org) '+
-                   r' $\bf{IMAGE:}$ Alex Thompson (@ajtclimate)',ha='right',fontsize=5,transform=ax.transAxes)
+                   r' $\bf{IMAGE:}$ climate-data-viz.com',ha='right',fontsize=5,transform=ax.transAxes)
     season = f'{month1}-{month2}' if len(monthi) < 12 and month1 != month2 else (
                                                                         month1 if month1 == month2 else 'Annual')
     ax.set_title(season+' Daily Low Temperature in '+location_name,loc='center',fontsize=14,pad=5,weight='bold');
@@ -1541,7 +1613,7 @@ def timeseries_pcpn_plot(var,meta,location_name,nlat,slat,wlon,elon,month1,month
     ############################################################################################################# 
 
     ax.text(1,0.015,r'$\bf{DATA:}$ NOAA ACIS (http://data.rcc-acis.org) '+
-                   r' $\bf{IMAGE:}$ Alex Thompson (@ajtclimate)',ha='right',fontsize=5,transform=ax.transAxes)
+                   r' $\bf{IMAGE:}$ climate-data-viz.com',ha='right',fontsize=5,transform=ax.transAxes)
     season = f'{month1}-{month2}' if len(monthi) < 12 and month1 != month2 else (
                                                                         month1 if month1 == month2 else 'Annual')
     ax.set_title(season+' Daily Rainfall in '+location_name,loc='center',fontsize=14,pad=5,weight='bold');
@@ -1715,7 +1787,7 @@ def timeseries_snow_plot(var,meta,location_name,nlat,slat,wlon,elon,month1,month
     ############################################################################################################# 
 
     ax.text(1,0.015,r'$\bf{DATA:}$ NOAA ACIS (http://data.rcc-acis.org) '+
-                   r' $\bf{IMAGE:}$ Alex Thompson (@ajtclimate)',ha='right',fontsize=5,transform=ax.transAxes)
+                   r' $\bf{IMAGE:}$ climate-data-viz.com',ha='right',fontsize=5,transform=ax.transAxes)
     season = f'{month1}-{month2}' if len(monthi) < 12 and month1 != month2 else (
                                                                         month1 if month1 == month2 else 'Annual')
     ax.set_title(season+' Daily Snowfall in '+location_name,loc='center',fontsize=14,pad=5,weight='bold');
@@ -1754,6 +1826,164 @@ def timeseries_snow_plot(var,meta,location_name,nlat,slat,wlon,elon,month1,month
 # spatialmap_tmax_plot 
 #================================================================================================================
 
+def spatialmap_tmax_plot(var,meta,location_name,nlat,slat,wlon,elon,timespan,incl_loc,stns_col,
+                         dot_size,cmap,cbar,incl_ticks,nlatbuf,slatbuf,wlonbuf,elonbuf,latstride,lonstride,
+                         # Lots of ways to input date range, if none specified then error message will appear
+                         sdate=None,edate=None,      # straightforward starting and ending date
+                         sngl_md=None,sngl_yr=None,  # single day query in parts for ipyw
+                         mult_md1=None,mult_yr1=None,mult_md2=None,mult_yr2=None # multi day query in parts
+                         ):
+    
+    ############################################################################################################# 
+    # Perform json request for griddata
+    ############################################################################################################# 
+    
+    # Determine input date range - this pieces together input parameters specified when calling function
+    if timespan == 'Single Day':
+        if sdate is not None:
+            sdate, edate = sdate, sdate # set sdate and edate as same
+        elif sngl_md is not None and sngl_yr is not None:
+            sdate = str(sngl_yr)+'-'+str(sngl_md)
+            edate = sdate
+    if timespan == 'Multiple Days':
+        if sdate is not None and edate is not None:
+            sdate, edate = sdate, edate # pass sdate and edate through
+        elif mult_md1 is not None and mult_yr1 is not None and mult_md2 is not None and mult_yr2 is not None:
+            sdate, edate = str(mult_yr1)+'-'+str(mult_md1), str(mult_yr2)+'-'+str(mult_md2)
+    
+    # Perform json request
+    try: 
+        params = {'bbox':[wlon-wlonbuf,slat-slatbuf,elon+elonbuf,nlat+nlatbuf],'sdate':sdate,'edate':edate,
+                  'grid':'1','elems':[{'name':'maxt'}],'meta':'ll'} 
+        json_response = urllib.request.urlopen(urllib.request.Request('http://data.rcc-acis.org/GridData',
+                                urllib.parse.urlencode({'params':json.dumps(params)}).encode('utf-8'),
+                                                       {'Accept':'application/json'})).read()
+    except:
+        print('Error in choosing date range to query. Check "timespan" and date range input parameters.')
+    raw = json.loads(json_response)
+
+    ############################################################################################################# 
+    # Process griddata
+    ############################################################################################################# 
+    
+    # Variables (regardless of time length)
+    lats  = np.unique(np.array(raw['meta']['lat']).flatten())
+    lons  = np.unique(np.array(raw['meta']['lon']).flatten())
+
+    # Process based on length of days queried
+    if timespan == 'Single Day':
+        # Only one day is queried
+        griddata = xr.DataArray(np.array(raw['data'][0][1]).flatten().reshape((len(lats),len(lons))),
+                                dims=['lat','lon'],coords=dict(lat=lats,lon=lons))
+    elif timespan == 'Multiple Days':
+        # More than one day is queried
+        date_str = list(dict(raw['data']).keys())                          # finds unique dates as strings
+        times = pd.date_range(start=date_str[0],end=date_str[-1],freq='D') # converts strings to datetime64[ns]
+        datatime = xr.DataArray(None,dims=['time','lat','lon'],coords=dict(time=times,lat=lats,lon=lons)
+                                ).astype(float)
+        for d in range(len(times)): # loops through each queried day
+            datatime[d,:,:] = np.array(raw['data'][d][1]).flatten().reshape((len(lats),len(lons)))
+        # Stats for multiple days
+            griddata = datatime.mean(dim='time')
+
+    # Set missing values and negative values to NaN 
+    griddata = griddata.where(griddata != -999, np.nan)
+    
+    ############################################################################################################# 
+    # Define figure and color bars
+    ############################################################################################################# 
+    
+    # Define figure 
+    projection = cartopy.crs.PlateCarree() # can try to add more projections later
+    fig, ax = plt.subplots(figsize=(5,4),dpi=300,subplot_kw={'projection':projection}) # res was 8,6
+    
+    # Define color bar (must unregister before registering)
+    if cmap == 'Bl-Yl-Rd':
+        mpl.colormaps.unregister('BlueYellowRed')
+        colorp = cmaps.BlueYellowRed
+    if cmap == 'Wh-Bl-Gn-Yl-Rd':
+        mpl.colormaps.unregister('WhiteBlueGreenYellowRed')
+        colorp = cmaps.WhiteBlueGreenYellowRed
+    if cmap == 'Haxby':
+        mpl.colormaps.unregister('GMT_haxby')
+        colorp = cmaps.GMT_haxby
+        
+    #############################################################################################################   
+    # Plotting contours 
+    #############################################################################################################       
+    
+    # Determine colorbar spacing values
+    if cbar == 'Full':
+        minval = -20.
+        maxval = 120
+        tksp = 20.
+        spval = 5.
+    if cbar == 'Zoomed':
+        minval = math.floor(griddata.min())
+        maxval = math.ceil(griddata.max())
+        tksp = 1. if maxval - minval <= 20. else 10. 
+        spval = 0.25 if tksp == 1. else 1.
+    
+    # Make contour plot
+    cntr = griddata.plot.contourf(ax=ax,transform=projection,add_colorbar=False,add_labels=False,extend='max',
+                                  cmap=colorp,levels=np.arange(minval,maxval+spval,spval))
+
+    # Plotting color bar
+    cbar_pad = 0.12 if incl_ticks == True else 0.02
+    cbar = fig.colorbar(cntr,ax=ax,orientation='horizontal',shrink=0.7,ticks=mpl.ticker.MultipleLocator(tksp),
+                        pad=cbar_pad,extend='max',spacing='proportional')
+    cbar.ax.tick_params(labelsize=8)
+    cbar.set_label('°F',fontsize=8)
+
+    # Specifications for map 
+    ax.set_extent([wlon-wlonbuf,elon+elonbuf,slat-slatbuf,nlat+nlatbuf])
+    ax.add_feature(cartopy.feature.STATES,linewidths=0.5)
+    ax.add_feature(cartopy.feature.COASTLINE,linewidths=0.5)
+    ax.add_patch(mpl.patches.Rectangle((wlon,slat),abs(wlon)-abs(elon),abs(nlat)-abs(slat),linestyle='-',
+                                       facecolor='none',edgecolor='k',linewidth=1,zorder=100))
+    ax.text((wlon+elon)/2,nlat+((nlat+nlatbuf)-(slat-slatbuf))/100,location_name,fontsize=4,ha='center')
+    
+    #############################################################################################################   
+    # Plotting stations 
+    #############################################################################################################   
+
+    if incl_loc == True:
+        ax.scatter(meta['lon'],meta['lat'],c=stns_col,s=dot_size,zorder=100)
+    
+    #############################################################################################################   
+    # Sets map ticks and labels 
+    #############################################################################################################   
+
+    if incl_ticks == True:
+        gv.set_axes_limits_and_ticks(ax,xlim=(wlon-wlonbuf,elon+elonbuf),ylim=(slat-slatbuf,nlat+nlatbuf),
+                                     xticks=np.linspace(-180.,180.,int((360/lonstride)+1)),
+                                     yticks=np.linspace(-90.,90.,int((180/latstride)+1)),
+                                     xticklabels=[],yticklabels=[])
+        gv.add_major_minor_ticks(ax,x_minor_per_major=2,y_minor_per_major=2)
+        ax.tick_params(which='major',length=4)
+        ax.tick_params(which='minor',length=2)
+        gl = ax.gridlines(crs=projection,draw_labels=True,alpha=0.0,color=None,
+                          xlim=(wlon-wlonbuf,elon+elonbuf),ylim=(slat-slatbuf,nlat+nlatbuf))
+        gl.xlocator = mpl.ticker.MultipleLocator(lonstride)
+        gl.ylocator = mpl.ticker.MultipleLocator(latstride)
+        gl.top_labels = False
+        gl.bottom_labels = True
+        gl.left_labels = True
+        gl.right_labels = False
+        gl.xpadding = 10
+        gl.ypadding = 10
+        gl.xlabel_style = {'size': 8}
+        gl.ylabel_style = {'size': 8}
+
+    #############################################################################################################   
+    # Title 
+    #############################################################################################################   
+
+    titletxt = 'Mean high temp from '+sdate+' to '+edate if timespan == 'Multiple Days' else \
+               'Daily high temp on '+sdate
+    ax.set_title(titletxt,pad=8,fontsize=10)
+
+    return fig
 
 #================================================================================================================
 # spatialmap_pcpn_plot 
@@ -1831,7 +2061,7 @@ def spatialmap_pcpn_plot(var,meta,location_name,nlat,slat,wlon,elon,timespan,sta
     
     # Define figure 
     projection = cartopy.crs.PlateCarree() # can try to add more projections later
-    fig, ax = plt.subplots(figsize=(8,6),dpi=300,subplot_kw={'projection':projection})
+    fig, ax = plt.subplots(figsize=(5,4),dpi=300,subplot_kw={'projection':projection}) # res was 8,6
     
     # Define color bar (must unregister before registering)
     white_color = np.array([1.0, 1.0, 1.0, 1.0])  # RGBA values for white
@@ -1854,48 +2084,34 @@ def spatialmap_pcpn_plot(var,meta,location_name,nlat,slat,wlon,elon,timespan,sta
     # Determine colorbar spacing values
     minval = 0. # colorbar starts at 0
     maxval = math.ceil(0.8*griddata.max()) if griddata.max() > 0. else 1. # colorbar ends at 80% of max value
-    tksp = 0.5 if maxval <= 5. else (1. if maxval <= 15 else 5.) # colorbar ticks 
-    sp50 = (maxval-minval) / 50 # unscaled colobar spacing value
-    # Algorithm for keeping colorbar spacing value within confines of ticks
-    if len(str(sp50)[str(sp50).index('.') + 1:]) > 1:
-        z,y = str(sp50)[-1], str(sp50)[-2]
-        add = 0 if int(z) < 5 else 1
-        newy = str(int(str(sp50)[-2])+add) 
-        spval = float(str(str(sp50)[0:-2])+str(newy)+'0')    
-    else: spval = sp50
-    if spval <= 0.: spval = 0.1 # spval cannot be zero or negative
+    tksp = 1. if maxval <= 10. else (5. if maxval <= 50. else 10.) # major tick spacing
+    spval = 0.25 if tksp == 1. else (1. if tksp == 5. else 5.) # minor tick spacing
     
     # Make contour plot
     cntr = griddata.plot.contourf(ax=ax,transform=projection,add_colorbar=False,add_labels=False,extend='max',
                                   cmap=colorp,levels=np.arange(minval,maxval+spval,spval))
 
     # Plotting color bar
-    cbar_pad = 0.1 if incl_ticks == True else 0.02
+    cbar_pad = 0.12 if incl_ticks == True else 0.02
     cbar = fig.colorbar(cntr,ax=ax,orientation='horizontal',shrink=0.7,ticks=mpl.ticker.MultipleLocator(tksp),
-                        pad=cbar_pad,label='inches',extend='max',spacing='proportional')
-    
+                        pad=cbar_pad,extend='max',spacing='proportional')
+    cbar.ax.tick_params(labelsize=8)
+    cbar.set_label('inches',fontsize=8)
+
     # Specifications for map 
     ax.set_extent([wlon-wlonbuf,elon+elonbuf,slat-slatbuf,nlat+nlatbuf])
     ax.add_feature(cartopy.feature.STATES,linewidths=0.5)
     ax.add_feature(cartopy.feature.COASTLINE,linewidths=0.5)
     ax.add_patch(mpl.patches.Rectangle((wlon,slat),abs(wlon)-abs(elon),abs(nlat)-abs(slat),linestyle='-',
                                        facecolor='none',edgecolor='k',linewidth=1,zorder=100))
-
+    ax.text((wlon+elon)/2,nlat+((nlat+nlatbuf)-(slat-slatbuf))/100,location_name,fontsize=4,ha='center')
+    
     #############################################################################################################   
     # Plotting stations 
     #############################################################################################################   
 
     if incl_loc == True:
         ax.scatter(meta['lon'],meta['lat'],c=stns_col,s=dot_size,zorder=100)
-        # Figuring this out later -------------------------------------------------------------------------------
-        #if stns_col == 'Colored by value':
-        #    # Find values from var
-        #    #sdate, edate = '2022-07-26','2022-07-28'
-        #    #print(var.loc[var['Date'].between(pd.to_datetime(sdate),pd.to_datetime(edate))])
-        #    if timespan == 'Single Day':
-        #        stn_vals = var.iloc[:,1:].loc[var['Date'] == pd.to_datetime(sdate)].values.flatten()
-        #    ax.scatter(meta['lon'],meta['lat'],c=stn_vals,cmap=colorp,s=dot_size,edgecolors='k',lw=0.5)
-        # Figuring this out later -------------------------------------------------------------------------------
     
     #############################################################################################################   
     # Sets map ticks and labels 
@@ -1919,8 +2135,8 @@ def spatialmap_pcpn_plot(var,meta,location_name,nlat,slat,wlon,elon,timespan,sta
         gl.right_labels = False
         gl.xpadding = 10
         gl.ypadding = 10
-        gl.xlabel_style = {'size': 12}
-        gl.ylabel_style = {'size': 12}
+        gl.xlabel_style = {'size': 8}
+        gl.ylabel_style = {'size': 8}
 
     #############################################################################################################   
     # Title 
@@ -1928,5 +2144,7 @@ def spatialmap_pcpn_plot(var,meta,location_name,nlat,slat,wlon,elon,timespan,sta
 
     titletxt = stats+' of 24-hr rainfall from '+sdate+' to '+edate if timespan == 'Multiple Days' else \
                '24-hr rainfall on '+sdate
-    ax.set_title(titletxt,pad=10,fontsize=12)
+    ax.set_title(titletxt,pad=8,fontsize=10)
+
+    return fig
 

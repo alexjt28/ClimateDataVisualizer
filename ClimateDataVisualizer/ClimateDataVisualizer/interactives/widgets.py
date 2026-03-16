@@ -76,10 +76,20 @@ def annualcycle_tmax_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                 '>Plot individual year</a></h3>')
     text_year = ipyw.Label(value='Include individual year?',layout=ipyw.Layout(width='150px'))
     incl_year = ipyw.Dropdown(options=[True,False],value=True,layout=ipyw.Layout(width='70px'))
-    text_iyr = ipyw.Label(value='Year Displayed',layout=ipyw.Layout(width='90px'))
+    text_iyr = ipyw.Label(value='Year Displayed',layout=ipyw.Layout(width='150px'))
     iyr = ipyw.Dropdown(options=var['Date'].dt.year.unique()[::-1],
                         value=var['Date'].dt.year.unique()[-1],layout=ipyw.Layout(width='70px'))
-
+    txt_disp = ipyw.Label(value='Show individual date?',layout=ipyw.Layout(width='150px'))
+    incl_date = ipyw.Dropdown(options=[True,False],value=False,layout=ipyw.Layout(width='70px'))
+    txt_date = ipyw.Label(value='Date',layout=ipyw.Layout(width='30px'))
+    disp_mon = ipyw.Dropdown(options=[('Jan','1'),('Feb','2'),('Mar','3'),('Apr','4'),('May','5'),
+                                      ('Jun','6'),('Jul','7'),('Aug','8'),('Sep','9'),('Oct','10'),
+                                      ('Nov','11'),('Dec','12')],value='1',layout=ipyw.Layout(width='55px'))
+    disp_day = ipyw.Dropdown(options=['{:02d}'.format(num) for num in np.arange(1,32)],value='01',
+                             layout=ipyw.Layout(width='45px'))
+    txt_lbloff = ipyw.Label(value='Offset',layout=ipyw.Layout(width='38px'))
+    lbloff = ipyw.FloatText(value=3.,layout=ipyw.Layout(width='50px'))
+    
     # Map
     txt_map   = ipyw.HTML(value=f'<h3><a style="color: black; "href={url_map} target="_blank" ' +
                                 'onmouseover="this.style.textDecoration=\'underline\'" '+
@@ -93,7 +103,7 @@ def annualcycle_tmax_widget(var,meta,location_name,nlat,slat,wlon,elon):
     text_lbl = ipyw.Label(value='Label distance',layout=ipyw.Layout(width='100px'))
     lbl_buff = ipyw.Dropdown(options=[('10%',0.1),('20%',0.2),('30%',0.3),('40%',0.4),('50%',0.5),
                                        ('60%',0.6),('70%',0.7),('80%',0.8),('90%',0.9),('None',1.5)],
-                              value=0.3,layout=ipyw.Layout(width='80px'))
+                              value=0.7,layout=ipyw.Layout(width='80px'))
     text_ext = ipyw.Label(value='Lat/lon buffer',layout=ipyw.Layout(width='100px'))
     ext_buff = ipyw.Dropdown(options=[('0.1°',0.1),('0.25°',0.25),('0.5°',0.5),('1°',1.),('5°',5.)],
                               value=0.5,layout=ipyw.Layout(width='80px'))
@@ -151,7 +161,11 @@ def annualcycle_tmax_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                  ipyw.HBox([text_year,incl_year],
                                            layout=ipyw.Layout(justify_content='center')),
                                  ipyw.HBox([text_iyr,iyr],
-                                           layout=ipyw.Layout(justify_content='space-between'))]),
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([txt_disp,incl_date],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([txt_date,disp_mon,disp_day,txt_lbloff,lbloff],
+                                           layout=ipyw.Layout(justify_content='center'))]),
                                ipyw.VBox([
                                  # Map 
                                  ipyw.HBox([txt_map],layout=ipyw.Layout(justify_content='center')),
@@ -188,19 +202,21 @@ def annualcycle_tmax_widget(var,meta,location_name,nlat,slat,wlon,elon):
     #----------------------------------------------------------------------------------------------
 
     # Define function with only interactive components that runs widget.plot function
-    def plot_fig(syr,eyr,num_stn,iyr,minbuff,maxbuff,majtick,mintick,incl_hist,incl_year,
-                 incl_info,incl_map,img_tile,lbl_buff,ext_buff):
+    def plot_fig(syr,eyr,num_stn,iyr,minbuff,maxbuff,majtick,mintick,incl_hist,incl_year,incl_date,
+                 disp_mon,disp_day,lbloff,incl_info,incl_map,img_tile,lbl_buff,ext_buff):
         fig,var_dy,var_max,var_95,var_avg,var_05,var_min = plots.annualcycle_tmax_plot(
                      var=var,meta=meta,location_name=location_name,nlat=float(nlat),
                      slat=float(slat),wlon=float(wlon),elon=float(elon),syr=syr,eyr=eyr,
                      num_stn=num_stn,iyr=iyr,minbuff=minbuff,maxbuff=maxbuff,majtick=majtick,
-                     mintick=mintick,incl_hist=incl_hist,incl_year=incl_year,incl_info=incl_info,
+                     mintick=mintick,incl_hist=incl_hist,incl_year=incl_year,incl_date=incl_date,
+                     disp_mon=disp_mon,disp_day=disp_day,lbloff=lbloff,incl_info=incl_info,
                      incl_map=incl_map,img_tile=img_tile,lbl_buff=lbl_buff,ext_buff=ext_buff)
 
         # Create a button widget to download the figure as PDF
         pdf_output = ipyw.Output()
         def download_pdf(button):
            pdf_filename = 'figure.pdf'
+           print(plt.Figure)
            pdf_opts(fig=fig,pdf_output=pdf_output,pdf_filename=pdf_filename)
         pdf_but = ipyw.Button(description='Download Figure', layout={'width': '140px'})
         pdf_but.on_click(download_pdf)
@@ -233,8 +249,9 @@ def annualcycle_tmax_widget(var,meta,location_name,nlat,slat,wlon,elon):
     out = ipyw.interactive_output(plot_fig,{'syr':syr,'eyr':eyr,'num_stn':num_stn,'iyr':iyr,
                                             'minbuff':minbuff,'maxbuff':maxbuff,'majtick':majtick,
                                             'mintick':mintick,'incl_hist':incl_hist,'incl_year':incl_year,
-                                            'incl_info':incl_info,'incl_map':incl_map,'img_tile':img_tile,
-                                            'lbl_buff':lbl_buff,'ext_buff':ext_buff})
+                                            'incl_date':incl_date,'disp_mon':disp_mon,'disp_day':disp_day,
+                                            'lbloff':lbloff,'incl_info':incl_info,'incl_map':incl_map,
+                                            'img_tile':img_tile,'lbl_buff':lbl_buff,'ext_buff':ext_buff})
     display(ui,out)
 
 #======================================================================================================
@@ -274,9 +291,19 @@ def annualcycle_tmin_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                 '>Plot individual year</a></h3>')
     text_year = ipyw.Label(value='Include individual year?',layout=ipyw.Layout(width='150px'))
     incl_year = ipyw.Dropdown(options=[True,False],value=True,layout=ipyw.Layout(width='70px'))
-    text_iyr = ipyw.Label(value='Year Displayed',layout=ipyw.Layout(width='90px'))
+    text_iyr = ipyw.Label(value='Year Displayed',layout=ipyw.Layout(width='150px'))
     iyr = ipyw.Dropdown(options=var['Date'].dt.year.unique()[::-1],
                         value=var['Date'].dt.year.unique()[-1],layout=ipyw.Layout(width='70px'))
+    txt_disp = ipyw.Label(value='Show individual date?',layout=ipyw.Layout(width='150px'))
+    incl_date = ipyw.Dropdown(options=[True,False],value=False,layout=ipyw.Layout(width='70px'))
+    txt_date = ipyw.Label(value='Date',layout=ipyw.Layout(width='30px'))
+    disp_mon = ipyw.Dropdown(options=[('Jan','1'),('Feb','2'),('Mar','3'),('Apr','4'),('May','5'),
+                                      ('Jun','6'),('Jul','7'),('Aug','8'),('Sep','9'),('Oct','10'),
+                                      ('Nov','11'),('Dec','12')],value='1',layout=ipyw.Layout(width='55px'))
+    disp_day = ipyw.Dropdown(options=['{:02d}'.format(num) for num in np.arange(1,32)],value='01',
+                             layout=ipyw.Layout(width='45px'))
+    txt_lbloff = ipyw.Label(value='Offset',layout=ipyw.Layout(width='38px'))
+    lbloff = ipyw.FloatText(value=-3.,layout=ipyw.Layout(width='50px'))
 
     # Map
     txt_map   = ipyw.HTML(value=f'<h3><a style="color: black; "href={url_map} target="_blank" ' +
@@ -291,7 +318,7 @@ def annualcycle_tmin_widget(var,meta,location_name,nlat,slat,wlon,elon):
     text_lbl = ipyw.Label(value='Label distance',layout=ipyw.Layout(width='100px'))
     lbl_buff = ipyw.Dropdown(options=[('10%',0.1),('20%',0.2),('30%',0.3),('40%',0.4),('50%',0.5),
                                        ('60%',0.6),('70%',0.7),('80%',0.8),('90%',0.9),('None',1.5)],
-                              value=0.3,layout=ipyw.Layout(width='80px'))
+                              value=0.7,layout=ipyw.Layout(width='80px'))
     text_ext = ipyw.Label(value='Lat/lon buffer',layout=ipyw.Layout(width='100px'))
     ext_buff = ipyw.Dropdown(options=[('0.1°',0.1),('0.25°',0.25),('0.5°',0.5),('1°',1.),('5°',5.)],
                               value=0.5,layout=ipyw.Layout(width='80px'))
@@ -349,7 +376,11 @@ def annualcycle_tmin_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                  ipyw.HBox([text_year,incl_year],
                                            layout=ipyw.Layout(justify_content='center')),
                                  ipyw.HBox([text_iyr,iyr],
-                                           layout=ipyw.Layout(justify_content='space-between'))]),
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([txt_disp,incl_date],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([txt_date,disp_mon,disp_day,txt_lbloff,lbloff],
+                                           layout=ipyw.Layout(justify_content='center'))]),
                                ipyw.VBox([
                                  # Map 
                                  ipyw.HBox([txt_map],layout=ipyw.Layout(justify_content='center')),
@@ -387,13 +418,14 @@ def annualcycle_tmin_widget(var,meta,location_name,nlat,slat,wlon,elon):
     #----------------------------------------------------------------------------------------------
 
     # Define function with only interactive components that runs widget.plot function
-    def plot_fig(syr,eyr,num_stn,iyr,minbuff,maxbuff,majtick,mintick,incl_hist,incl_year,
-                 incl_info,incl_map,img_tile,lbl_buff,ext_buff):
+    def plot_fig(syr,eyr,num_stn,iyr,minbuff,maxbuff,majtick,mintick,incl_hist,incl_year,incl_date,
+                 disp_mon,disp_day,lbloff,incl_info,incl_map,img_tile,lbl_buff,ext_buff):
         fig,var_dy,var_max,var_95,var_avg,var_05,var_min = plots.annualcycle_tmin_plot(
                      var=var,meta=meta,location_name=location_name,nlat=float(nlat),
                      slat=float(slat),wlon=float(wlon),elon=float(elon),syr=syr,eyr=eyr,
                      num_stn=num_stn,iyr=iyr,minbuff=minbuff,maxbuff=maxbuff,majtick=majtick,
-                     mintick=mintick,incl_hist=incl_hist,incl_year=incl_year,incl_info=incl_info,
+                     mintick=mintick,incl_hist=incl_hist,incl_year=incl_year,incl_date=incl_date,
+                     disp_mon=disp_mon,disp_day=disp_day,lbloff=lbloff,incl_info=incl_info,
                      incl_map=incl_map,img_tile=img_tile,lbl_buff=lbl_buff,ext_buff=ext_buff)
 
         # Create a button widget to download the figure as PDF
@@ -428,14 +460,13 @@ def annualcycle_tmin_widget(var,meta,location_name,nlat,slat,wlon,elon):
         button_box = ipyw.VBox([ipyw.HBox([pdf_but,xcl_but],layout=ipyw.Layout(justify_content='center'))])
         display(button_box,pdf_output,xcl_output)
 
-
-
     # Interactive output with only interactive components in dictionary
     out = ipyw.interactive_output(plot_fig,{'syr':syr,'eyr':eyr,'num_stn':num_stn,'iyr':iyr,
                                             'minbuff':minbuff,'maxbuff':maxbuff,'majtick':majtick,
                                             'mintick':mintick,'incl_hist':incl_hist,'incl_year':incl_year,
-                                            'incl_info':incl_info,'incl_map':incl_map,'img_tile':img_tile,
-                                            'lbl_buff':lbl_buff,'ext_buff':ext_buff})
+                                            'incl_date':incl_date,'disp_mon':disp_mon,'disp_day':disp_day,
+                                            'lbloff':lbloff,'incl_info':incl_info,'incl_map':incl_map,
+                                            'img_tile':img_tile,'lbl_buff':lbl_buff,'ext_buff':ext_buff})
     display(ui,out)
 
 #======================================================================================================
@@ -488,10 +519,20 @@ def annualcycle_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                 '>Plot individual year</a></h3>')
     text_year = ipyw.Label(value='Include individual year?',layout=ipyw.Layout(width='150px'))
     incl_year = ipyw.Dropdown(options=[True,False],value=True,layout=ipyw.Layout(width='70px'))
-    text_iyr = ipyw.Label(value='Year Displayed',layout=ipyw.Layout(width='90px'))
+    text_iyr = ipyw.Label(value='Year Displayed',layout=ipyw.Layout(width='150px'))
     iyr = ipyw.Dropdown(options=var['Date'].dt.year.unique()[::-1],
                         value=var['Date'].dt.year.unique()[-1],layout=ipyw.Layout(width='70px'))
-
+    txt_disp = ipyw.Label(value='Show individual date?',layout=ipyw.Layout(width='150px'))
+    incl_date = ipyw.Dropdown(options=[True,False],value=False,layout=ipyw.Layout(width='70px'))
+    txt_date = ipyw.Label(value='Date',layout=ipyw.Layout(width='30px'))
+    disp_mon = ipyw.Dropdown(options=[('Jan','1'),('Feb','2'),('Mar','3'),('Apr','4'),('May','5'),
+                                      ('Jun','6'),('Jul','7'),('Aug','8'),('Sep','9'),('Oct','10'),
+                                      ('Nov','11'),('Dec','12')],value='1',layout=ipyw.Layout(width='55px'))
+    disp_day = ipyw.Dropdown(options=['{:02d}'.format(num) for num in np.arange(1,32)],value='01',
+                             layout=ipyw.Layout(width='45px'))
+    txt_lbloff = ipyw.Label(value='Offset',layout=ipyw.Layout(width='38px'))
+    lbloff = ipyw.FloatText(value=0.5,layout=ipyw.Layout(width='50px'))
+    
     # Y-axis buffer
     txt_buff  = ipyw.HTML(value=f'<h3><a style="color: black; "href={url_yaxis} target="_blank" ' +
                                 'onmouseover="this.style.textDecoration=\'underline\'" '+
@@ -529,7 +570,7 @@ def annualcycle_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
     text_lbl = ipyw.Label(value='Label distance',layout=ipyw.Layout(width='100px'))
     lbl_buff = ipyw.Dropdown(options=[('10%',0.1),('20%',0.2),('30%',0.3),('40%',0.4),('50%',0.5),
                                        ('60%',0.6),('70%',0.7),('80%',0.8),('90%',0.9),('None',1.5)],
-                              value=0.3,layout=ipyw.Layout(width='80px'))
+                              value=0.7,layout=ipyw.Layout(width='80px'))
     text_ext = ipyw.Label(value='Lat/lon buffer',layout=ipyw.Layout(width='100px'))
     ext_buff = ipyw.Dropdown(options=[('0.1°',0.1),('0.25°',0.25),('0.5°',0.5),('1°',1.),('5°',5.)],
                               value=0.5,layout=ipyw.Layout(width='80px'))
@@ -540,14 +581,7 @@ def annualcycle_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
 
     ui = ipyw.VBox([
                     # FIRST ROW
-                    ipyw.HBox([ipyw.VBox([
-                                 # Define rainfall data
-                                 ipyw.HBox([txt_rain],layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([text_type,rain_type],
-                                           layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([text_nday,nday],
-                                           layout=ipyw.Layout(justify_content='center'))]),
-                               ipyw.VBox([ 
+                    ipyw.HBox([ipyw.VBox([ 
                                  # Define years for historical range
                                  ipyw.HBox([txt_hist],layout=ipyw.Layout(justify_content='center')),
                                  ipyw.HBox([text_hist,incl_hist],layout=ipyw.Layout(
@@ -562,10 +596,28 @@ def annualcycle_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                  ipyw.HBox([text_year,incl_year],
                                            layout=ipyw.Layout(justify_content='center')),
                                  ipyw.HBox([text_iyr,iyr],
-                                           layout=ipyw.Layout(justify_content='space-between'))])],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([txt_disp,incl_date],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([txt_date,disp_mon,disp_day,txt_lbloff,lbloff],
+                                           layout=ipyw.Layout(justify_content='center'))]),
+                               ipyw.VBox([  
+                                 # Map 
+                                 ipyw.HBox([txt_map],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([ipyw.VBox([ipyw.HBox([text_map,incl_map]),
+                                                       ipyw.HBox([text_lyr,img_tile]),
+                                                       ipyw.HBox([text_lbl,lbl_buff]),
+                                                       ipyw.HBox([text_ext,ext_buff])])])])],
                                layout=ipyw.Layout(justify_content='space-around')),
                     # SECOND ROW
                     ipyw.HBox([ipyw.VBox([
+                                 # Define rainfall data
+                                 ipyw.HBox([txt_rain],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_type,rain_type],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_nday,nday],
+                                           layout=ipyw.Layout(justify_content='center'))]),
+                               ipyw.VBox([
                                  # Y-axis buffer
                                  ipyw.HBox([txt_buff],layout=ipyw.Layout(justify_content='center')),
                                  ipyw.HBox([ipyw.VBox([ipyw.HBox([maxb_desc,maxbuff,maxb_unit]),
@@ -578,14 +630,7 @@ def annualcycle_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                  ipyw.HBox([ipyw.VBox([ipyw.HBox([majtk_desc,majtick,majtk_unit]),
                                                        ipyw.HBox([mintk_desc,mintick,mintk_unit])])],
                                             layout=ipyw.Layout(flex='1 1 auto',
-                                                               justify_content='space-between'))]),
-                               ipyw.VBox([
-                                 # Map 
-                                 ipyw.HBox([txt_map],layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([ipyw.VBox([ipyw.HBox([text_map,incl_map]),
-                                                       ipyw.HBox([text_lyr,img_tile]),
-                                                       ipyw.HBox([text_lbl,lbl_buff]),
-                                                       ipyw.HBox([text_ext,ext_buff])])])])],
+                                                               justify_content='space-between'))])],
                                layout=ipyw.Layout(justify_content='space-around'))
                      ])
 
@@ -595,7 +640,7 @@ def annualcycle_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
 
     # Define function with only interactive components that runs widget.plot function
     def plot_fig(rain_type,nday,syr,eyr,num_stn,iyr,minbuff,maxbuff,majtick,mintick,incl_hist,
-                 incl_year,incl_map,img_tile,lbl_buff,ext_buff):
+                 incl_year,incl_date,disp_mon,disp_day,lbloff,incl_map,img_tile,lbl_buff,ext_buff):
         
         if rain_type == 'all' or rain_type == 'rain':
             fig,var_dy,var_max,var_95,var_avg = plots.annualcycle_pcpn_plot(
@@ -603,6 +648,7 @@ def annualcycle_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
                      nlat=float(nlat),slat=float(slat),wlon=float(wlon),elon=float(elon),
                      syr=syr,eyr=eyr,num_stn=num_stn,iyr=iyr,minbuff=minbuff,maxbuff=maxbuff,
                      majtick=majtick,mintick=mintick,incl_hist=incl_hist,incl_year=incl_year,
+                     incl_date=incl_date,disp_mon=disp_mon,disp_day=disp_day,lbloff=lbloff,
                      incl_map=incl_map,img_tile=img_tile,lbl_buff=lbl_buff,ext_buff=ext_buff)
         if rain_type == 'wetNday':
             fig,var_dy,var_max,var_min = plots.annualcycle_pcpn_plot(
@@ -610,6 +656,7 @@ def annualcycle_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
                      nlat=float(nlat),slat=float(slat),wlon=float(wlon),elon=float(elon),
                      syr=syr,eyr=eyr,num_stn=num_stn,iyr=iyr,minbuff=minbuff,maxbuff=maxbuff,
                      majtick=majtick,mintick=mintick,incl_hist=incl_hist,incl_year=incl_year,
+                     incl_date=incl_date,disp_mon=disp_mon,disp_day=disp_day,lbloff=lbloff,
                      incl_map=incl_map,img_tile=img_tile,lbl_buff=lbl_buff,ext_buff=ext_buff)
 
         # Create a button widget to download the figure as PDF
@@ -656,6 +703,8 @@ def annualcycle_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                             'num_stn':num_stn,'iyr':iyr,'minbuff':minbuff,
                                             'maxbuff':maxbuff,'majtick':majtick,'mintick':mintick,
                                             'incl_hist':incl_hist,'incl_year':incl_year,
+                                            'incl_date':incl_date,'disp_mon':disp_mon,
+                                            'disp_day':disp_day,'lbloff':lbloff,
                                             'incl_map':incl_map,'img_tile':img_tile,
                                             'lbl_buff':lbl_buff,'ext_buff':ext_buff})
     display(ui,out)
@@ -710,9 +759,19 @@ def annualcycle_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                 '>Plot individual year</a></h3>')
     text_year = ipyw.Label(value='Include individual year?',layout=ipyw.Layout(width='150px'))
     incl_year = ipyw.Dropdown(options=[True,False],value=True,layout=ipyw.Layout(width='70px'))
-    text_iyr = ipyw.Label(value='Year Displayed',layout=ipyw.Layout(width='90px'))
+    text_iyr = ipyw.Label(value='Year Displayed',layout=ipyw.Layout(width='150px'))
     iyr = ipyw.Dropdown(options=var['Date'].dt.year.unique()[::-1],
                         value=var['Date'].dt.year.unique()[-1],layout=ipyw.Layout(width='70px'))
+    txt_disp = ipyw.Label(value='Show individual date?',layout=ipyw.Layout(width='150px'))
+    incl_date = ipyw.Dropdown(options=[True,False],value=False,layout=ipyw.Layout(width='70px'))
+    txt_date = ipyw.Label(value='Date',layout=ipyw.Layout(width='30px'))
+    disp_mon = ipyw.Dropdown(options=[('Jan','1'),('Feb','2'),('Mar','3'),('Apr','4'),('May','5'),
+                                      ('Jun','6'),('Jul','7'),('Aug','8'),('Sep','9'),('Oct','10'),
+                                      ('Nov','11'),('Dec','12')],value='1',layout=ipyw.Layout(width='55px'))
+    disp_day = ipyw.Dropdown(options=['{:02d}'.format(num) for num in np.arange(1,32)],value='01',
+                             layout=ipyw.Layout(width='45px'))
+    txt_lbloff = ipyw.Label(value='Offset',layout=ipyw.Layout(width='38px'))
+    lbloff = ipyw.FloatText(value=0.5,layout=ipyw.Layout(width='50px'))
 
     # Y-axis buffer
     txt_buff  = ipyw.HTML(value=f'<h3><a style="color: black; "href={url_yaxis} target="_blank" ' +
@@ -751,7 +810,7 @@ def annualcycle_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
     text_lbl = ipyw.Label(value='Label distance',layout=ipyw.Layout(width='100px'))
     lbl_buff = ipyw.Dropdown(options=[('10%',0.1),('20%',0.2),('30%',0.3),('40%',0.4),('50%',0.5),
                                        ('60%',0.6),('70%',0.7),('80%',0.8),('90%',0.9),('None',1.5)],
-                              value=0.3,layout=ipyw.Layout(width='80px'))
+                              value=0.7,layout=ipyw.Layout(width='80px'))
     text_ext = ipyw.Label(value='Lat/lon buffer',layout=ipyw.Layout(width='100px'))
     ext_buff = ipyw.Dropdown(options=[('0.1°',0.1),('0.25°',0.25),('0.5°',0.5),('1°',1.),('5°',5.)],
                               value=0.5,layout=ipyw.Layout(width='80px'))
@@ -762,14 +821,7 @@ def annualcycle_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
 
     ui = ipyw.VBox([
                     # FIRST ROW
-                    ipyw.HBox([ipyw.VBox([
-                                 # Define snowfall data
-                                 ipyw.HBox([txt_snow],layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([text_type,snow_type],
-                                           layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([text_nday,nday],
-                                           layout=ipyw.Layout(justify_content='center'))]),
-                               ipyw.VBox([
+                    ipyw.HBox([ipyw.VBox([ 
                                  # Define years for historical range
                                  ipyw.HBox([txt_hist],layout=ipyw.Layout(justify_content='center')),
                                  ipyw.HBox([text_hist,incl_hist],layout=ipyw.Layout(
@@ -784,10 +836,28 @@ def annualcycle_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                  ipyw.HBox([text_year,incl_year],
                                            layout=ipyw.Layout(justify_content='center')),
                                  ipyw.HBox([text_iyr,iyr],
-                                           layout=ipyw.Layout(justify_content='space-between'))])],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([txt_disp,incl_date],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([txt_date,disp_mon,disp_day,txt_lbloff,lbloff],
+                                           layout=ipyw.Layout(justify_content='center'))]),
+                               ipyw.VBox([  
+                                 # Map 
+                                 ipyw.HBox([txt_map],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([ipyw.VBox([ipyw.HBox([text_map,incl_map]),
+                                                       ipyw.HBox([text_lyr,img_tile]),
+                                                       ipyw.HBox([text_lbl,lbl_buff]),
+                                                       ipyw.HBox([text_ext,ext_buff])])])])],
                                layout=ipyw.Layout(justify_content='space-around')),
                     # SECOND ROW
                     ipyw.HBox([ipyw.VBox([
+                                 # Define snowfall data
+                                 ipyw.HBox([txt_snow],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_type,snow_type],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_nday,nday],
+                                           layout=ipyw.Layout(justify_content='center'))]),
+                               ipyw.VBox([
                                  # Y-axis buffer
                                  ipyw.HBox([txt_buff],layout=ipyw.Layout(justify_content='center')),
                                  ipyw.HBox([ipyw.VBox([ipyw.HBox([maxb_desc,maxbuff,maxb_unit]),
@@ -800,14 +870,7 @@ def annualcycle_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                  ipyw.HBox([ipyw.VBox([ipyw.HBox([majtk_desc,majtick,majtk_unit]),
                                                        ipyw.HBox([mintk_desc,mintick,mintk_unit])])],
                                             layout=ipyw.Layout(flex='1 1 auto',
-                                                               justify_content='space-between'))]),
-                               ipyw.VBox([
-                                 # Map 
-                                 ipyw.HBox([txt_map],layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([ipyw.VBox([ipyw.HBox([text_map,incl_map]),
-                                                       ipyw.HBox([text_lyr,img_tile]),
-                                                       ipyw.HBox([text_lbl,lbl_buff]),
-                                                       ipyw.HBox([text_ext,ext_buff])])])])],
+                                                               justify_content='space-between'))])],
                                layout=ipyw.Layout(justify_content='space-around'))
                      ])
 
@@ -817,7 +880,7 @@ def annualcycle_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
 
     # Define function with only interactive components that runs widget.plot function
     def plot_fig(snow_type,nday,syr,eyr,num_stn,iyr,minbuff,maxbuff,majtick,mintick,incl_hist,
-                 incl_year,incl_map,img_tile,lbl_buff,ext_buff):
+                 incl_year,incl_date,disp_mon,disp_day,lbloff,incl_map,img_tile,lbl_buff,ext_buff):
 
         if snow_type == 'all' or snow_type == 'snow':
             fig,var_dy,var_max,var_95,var_avg = plots.annualcycle_snow_plot(
@@ -825,6 +888,7 @@ def annualcycle_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
                      nlat=float(nlat),slat=float(slat),wlon=float(wlon),elon=float(elon),
                      syr=syr,eyr=eyr,num_stn=num_stn,iyr=iyr,minbuff=minbuff,maxbuff=maxbuff,
                      majtick=majtick,mintick=mintick,incl_hist=incl_hist,incl_year=incl_year,
+                     incl_date=incl_date,disp_mon=disp_mon,disp_day=disp_day,lbloff=lbloff,                
                      incl_map=incl_map,img_tile=img_tile,lbl_buff=lbl_buff,ext_buff=ext_buff)
         if snow_type == 'wetNday':
             fig,var_dy,var_max,var_min = plots.annualcycle_snow_plot(
@@ -832,6 +896,7 @@ def annualcycle_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
                      nlat=float(nlat),slat=float(slat),wlon=float(wlon),elon=float(elon),
                      syr=syr,eyr=eyr,num_stn=num_stn,iyr=iyr,minbuff=minbuff,maxbuff=maxbuff,
                      majtick=majtick,mintick=mintick,incl_hist=incl_hist,incl_year=incl_year,
+                     incl_date=incl_date,disp_mon=disp_mon,disp_day=disp_day,lbloff=lbloff,
                      incl_map=incl_map,img_tile=img_tile,lbl_buff=lbl_buff,ext_buff=ext_buff)
 
         # Create a button widget to download the figure as PDF
@@ -878,6 +943,8 @@ def annualcycle_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                             'num_stn':num_stn,'iyr':iyr,'minbuff':minbuff,
                                             'maxbuff':maxbuff,'majtick':majtick,'mintick':mintick,
                                             'incl_hist':incl_hist,'incl_year':incl_year,
+                                            'incl_date':incl_date,'disp_mon':disp_mon,
+                                            'disp_day':disp_day,'lbloff':lbloff,
                                             'incl_map':incl_map,'img_tile':img_tile,
                                             'lbl_buff':lbl_buff,'ext_buff':ext_buff})
     display(ui,out)
@@ -974,7 +1041,7 @@ def cumulative_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
     text_lbl = ipyw.Label(value='Label distance',layout=ipyw.Layout(width='100px'))
     lbl_buff = ipyw.Dropdown(options=[('10%',0.1),('20%',0.2),('30%',0.3),('40%',0.4),('50%',0.5),
                                        ('60%',0.6),('70%',0.7),('80%',0.8),('90%',0.9),('None',1.5)],
-                              value=0.3,layout=ipyw.Layout(width='80px'))
+                              value=0.7,layout=ipyw.Layout(width='80px'))
     text_ext = ipyw.Label(value='Lat/lon buffer',layout=ipyw.Layout(width='100px'))
     ext_buff = ipyw.Dropdown(options=[('0.1°',0.1),('0.25°',0.25),('0.5°',0.5),('1°',1.),('5°',5.)],
                               value=0.5,layout=ipyw.Layout(width='80px'))
@@ -1176,7 +1243,7 @@ def cumulative_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
     text_lbl = ipyw.Label(value='Label distance',layout=ipyw.Layout(width='100px'))
     lbl_buff = ipyw.Dropdown(options=[('10%',0.1),('20%',0.2),('30%',0.3),('40%',0.4),('50%',0.5),
                                        ('60%',0.6),('70%',0.7),('80%',0.8),('90%',0.9),('None',1.5)],
-                              value=0.3,layout=ipyw.Layout(width='80px'))
+                              value=0.7,layout=ipyw.Layout(width='80px'))
     text_ext = ipyw.Label(value='Lat/lon buffer',layout=ipyw.Layout(width='100px'))
     ext_buff = ipyw.Dropdown(options=[('0.1°',0.1),('0.25°',0.25),('0.5°',0.5),('1°',1.),('5°',5.)],
                               value=0.5,layout=ipyw.Layout(width='80px'))
@@ -1396,7 +1463,7 @@ def timeseries_tmax_widget(var,meta,location_name,nlat,slat,wlon,elon):
     text_lbl = ipyw.Label(value='Label distance',layout=ipyw.Layout(width='100px'))
     lbl_buff = ipyw.Dropdown(options=[('10%',0.1),('20%',0.2),('30%',0.3),('40%',0.4),('50%',0.5),
                                        ('60%',0.6),('70%',0.7),('80%',0.8),('90%',0.9),('None',1.5)],
-                              value=0.3,layout=ipyw.Layout(width='90px'))
+                              value=0.7,layout=ipyw.Layout(width='90px'))
     text_ext = ipyw.Label(value='Lat/lon buffer',layout=ipyw.Layout(width='100px'))
     ext_buff = ipyw.Dropdown(options=[('0.1°',0.1),('0.25°',0.25),('0.5°',0.5),('1°',1.),('5°',5.)],
                               value=0.5,layout=ipyw.Layout(width='90px'))
@@ -1606,7 +1673,7 @@ def timeseries_tmin_widget(var,meta,location_name,nlat,slat,wlon,elon):
     text_lbl = ipyw.Label(value='Label distance',layout=ipyw.Layout(width='100px'))
     lbl_buff = ipyw.Dropdown(options=[('10%',0.1),('20%',0.2),('30%',0.3),('40%',0.4),('50%',0.5),
                                        ('60%',0.6),('70%',0.7),('80%',0.8),('90%',0.9),('None',1.5)],
-                              value=0.3,layout=ipyw.Layout(width='90px'))
+                              value=0.7,layout=ipyw.Layout(width='90px'))
     text_ext = ipyw.Label(value='Lat/lon buffer',layout=ipyw.Layout(width='100px'))
     ext_buff = ipyw.Dropdown(options=[('0.1°',0.1),('0.25°',0.25),('0.5°',0.5),('1°',1.),('5°',5.)],
                               value=0.5,layout=ipyw.Layout(width='90px'))
@@ -1820,7 +1887,7 @@ def timeseries_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
     text_lbl = ipyw.Label(value='Label distance',layout=ipyw.Layout(width='100px'))
     lbl_buff = ipyw.Dropdown(options=[('10%',0.1),('20%',0.2),('30%',0.3),('40%',0.4),('50%',0.5),
                                        ('60%',0.6),('70%',0.7),('80%',0.8),('90%',0.9),('None',1.5)],
-                              value=0.3,layout=ipyw.Layout(width='90px'))
+                              value=0.7,layout=ipyw.Layout(width='90px'))
     text_ext = ipyw.Label(value='Lat/lon buffer',layout=ipyw.Layout(width='100px'))
     ext_buff = ipyw.Dropdown(options=[('0.1°',0.1),('0.25°',0.25),('0.5°',0.5),('1°',1.),('5°',5.)],
                               value=0.5,layout=ipyw.Layout(width='90px'))
@@ -2042,7 +2109,7 @@ def timeseries_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
     text_lbl = ipyw.Label(value='Label distance',layout=ipyw.Layout(width='100px'))
     lbl_buff = ipyw.Dropdown(options=[('10%',0.1),('20%',0.2),('30%',0.3),('40%',0.4),('50%',0.5),
                                        ('60%',0.6),('70%',0.7),('80%',0.8),('90%',0.9),('None',1.5)],
-                              value=0.3,layout=ipyw.Layout(width='90px'))
+                              value=0.7,layout=ipyw.Layout(width='90px'))
     text_ext = ipyw.Label(value='Lat/lon buffer',layout=ipyw.Layout(width='100px'))
     ext_buff = ipyw.Dropdown(options=[('0.1°',0.1),('0.25°',0.25),('0.5°',0.5),('1°',1.),('5°',5.)],
                               value=0.5,layout=ipyw.Layout(width='90px'))
@@ -2172,6 +2239,187 @@ def timeseries_snow_widget(var,meta,location_name,nlat,slat,wlon,elon):
 # spatialmap_tmax_widget
 #======================================================================================================
 
+def spatialmap_tmax_widget(var,meta,location_name,nlat,slat,wlon,elon):
+    
+    #----------------------------------------------------------------------------------------------
+    # Set up parameters to toggle
+    #----------------------------------------------------------------------------------------------
+
+    # Variables to define before setting ipywidget variables
+    mon_str        = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    days_per_month = [31,29,31,30,31,30,31,31,30,31,30,31]
+    tuple_str = [f'{m} {d}' for m,d in zip(np.repeat(mon_str,days_per_month),
+                                           np.concatenate([np.arange(1,z+1) for z in days_per_month]))]
+    tuple_num = [f'{str(m).zfill(2)}-{str(d).zfill(2)}' for m,d in zip(np.repeat(np.arange(1,13),
+                        days_per_month),np.concatenate([np.arange(1,z+1) for z in days_per_month]))] 
+
+    # Date(s) to plot
+    txt_date = ipyw.HTML(value=f'<h3><a style="color: black; "href={url_spatialmap} target="_blank" ' +
+                                'onmouseover="this.style.textDecoration=\'underline\'" '+
+                                'onmouseout="this.style.textDecoration=\'none\'"'+
+                                '>Date(s) to plot</a></h3>')
+    text_span = ipyw.Label(value='Time Span',layout=ipyw.Layout(width='70px'))
+    timespan  = ipyw.Dropdown(options=['Single Day','Multiple Days'],value='Single Day',
+                              layout=ipyw.Layout(width='120px'))
+    text_sngl = ipyw.Label(value='If single day',layout=ipyw.Layout(width='80px'))
+    sngl_md   = ipyw.Dropdown(options=list(zip(tuple_str,tuple_num)),value='09-01',
+                              layout=ipyw.Layout(width='75px'))
+    sngl_yr   = ipyw.Dropdown(options=np.arange(1950,datetime.now().year+1)[::-1],value=2023,
+                              layout=ipyw.Layout(width='70px'))
+    text_mult = ipyw.Label(value='If multiple days',layout=ipyw.Layout(width='100px'))
+    text_to   = ipyw.Label(value='to',layout=ipyw.Layout(width='20px'))
+    mult_md1  = ipyw.Dropdown(options=list(zip(tuple_str,tuple_num)),value='09-01',
+                              layout=ipyw.Layout(width='75px'))
+    mult_yr1  = ipyw.Dropdown(options=np.arange(1950,datetime.now().year+1)[::-1],value=2023,
+                              layout=ipyw.Layout(width='70px'))
+    mult_md2  = ipyw.Dropdown(options=list(zip(tuple_str,tuple_num)),value='09-02',
+                              layout=ipyw.Layout(width='75px'))
+    mult_yr2  = ipyw.Dropdown(options=np.arange(1950,datetime.now().year+1)[::-1],value=2023,
+                              layout=ipyw.Layout(width='70px'))
+
+    # Map Properties
+    txt_map = ipyw.HTML(value=f'<h3><a style="color: black; "href={url_spatialmap} target="_blank" ' +
+                                'onmouseover="this.style.textDecoration=\'underline\'" '+
+                                'onmouseout="this.style.textDecoration=\'none\'"'+
+                                '>Map properties</a></h3>')
+    text_cmap = ipyw.Label(value='Color Map',layout=ipyw.Layout(width='120px'))
+    cmap      = ipyw.Dropdown(options=['Wh-Bl-Gn-Yl-Rd','Bl-Yl-Rd','Haxby'],value='Wh-Bl-Gn-Yl-Rd',
+                              layout=ipyw.Layout(width='130px'))
+    text_cbar = ipyw.Label(value='Color Bar Extent',layout=ipyw.Layout(width='120px'))
+    cbar      = ipyw.Dropdown(options=['Full','Zoomed'],value='Zoomed',layout=ipyw.Layout(width='130px'))    
+    text_ticks = ipyw.Label(value='Show tick marks',layout=ipyw.Layout(width='120px'))
+    incl_ticks = ipyw.Dropdown(options=[True,False],value=True,layout=ipyw.Layout(width='130px'))    
+    text_stride = ipyw.Label(value='Tick stride',layout=ipyw.Layout(width='70px'))
+    text_dlat   = ipyw.Label(value='° lat',layout=ipyw.Layout(width='30px'))
+    text_dlon   = ipyw.Label(value='° lon',layout=ipyw.Layout(width='30px'))
+    latstride   = ipyw.FloatText(value=1.,layout=ipyw.Layout(width='50px'))
+    lonstride   = ipyw.FloatText(value=1.,layout=ipyw.Layout(width='50px'))  
+
+    
+    # Map extent
+    txt_coord = ipyw.HTML(value=f'<h3><a style="color: black; "href={url_spatialmap} target="_blank" ' +
+                                'onmouseover="this.style.textDecoration=\'underline\'" '+
+                                'onmouseout="this.style.textDecoration=\'none\'"'+
+                                '>Map extent</a></h3>',layout=ipyw.Layout(margin='0 0 -20px 0'))
+    text_dist = ipyw.Label(value='Distance from query region',layout=ipyw.Layout(width='170px'))
+    text_n    = ipyw.Label(value='North',layout=ipyw.Layout(width='40px'))
+    text_s    = ipyw.Label(value='South',layout=ipyw.Layout(width='40px'))
+    text_w    = ipyw.Label(value='West',layout=ipyw.Layout(width='40px'))
+    text_e    = ipyw.Label(value='East',layout=ipyw.Layout(width='40px'))
+    text_deg  = ipyw.Label(value='°',layout=ipyw.Layout(width='10px'))
+    nlatbuf   = ipyw.FloatText(value=1.,layout=ipyw.Layout(width='50px'))
+    slatbuf   = ipyw.FloatText(value=1.,layout=ipyw.Layout(width='50px'))
+    wlonbuf   = ipyw.FloatText(value=1.5,layout=ipyw.Layout(width='50px'))
+    elonbuf   = ipyw.FloatText(value=1.5,layout=ipyw.Layout(width='50px'))   
+    
+    # Display stations
+    txt_stns = ipyw.HTML(value=f'<h3><a style="color: black; "href={url_spatialmap} target="_blank" ' +
+                                'onmouseover="this.style.textDecoration=\'underline\'" '+
+                                'onmouseout="this.style.textDecoration=\'none\'"'+
+                                '>Display stations</a></h3>')
+    text_loc = ipyw.Label(value='Show locations on map',layout=ipyw.Layout(width='140px'))
+    incl_loc = ipyw.Dropdown(options=[True,False],value=True,layout=ipyw.Layout(width='80px'))
+    text_col = ipyw.Label(value='Colors of stations',layout=ipyw.Layout(width='140px'))
+    stns_col = ipyw.Dropdown(options=[('Black','k'),('Red','r'),('White','w')],# will add colored by value later
+                             value='k',layout=ipyw.Layout(width='80px'))
+    text_dots = ipyw.Label(value='Station dot size',layout=ipyw.Layout(width='100px'))
+    dot_size  = ipyw.FloatSlider(value=1,min=0.1,max=3.1,step=0.1,orientation='horizontal',
+                               layout=ipyw.Layout(width='140px'))
+    
+    #----------------------------------------------------------------------------------------------
+    # Layout for dropdowns
+    #----------------------------------------------------------------------------------------------
+
+    ui = ipyw.VBox([
+                    # FIRST ROW
+                    ipyw.HBox([ipyw.VBox([
+                                 # Date(s) to plot
+                                 ipyw.HBox([txt_date],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_span,timespan],layout=ipyw.Layout(
+                                                                        justify_content='center')),
+                                 ipyw.HBox([text_sngl,sngl_md,sngl_yr],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_mult,mult_md1,mult_yr1,text_to,mult_md2,mult_yr2],
+                                           layout=ipyw.Layout(justify_content='center'))]),
+                               
+                               ipyw.VBox([
+                                 # Map properties
+                                 ipyw.HBox([txt_map],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_cmap,cmap],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_cbar,cbar],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_ticks,incl_ticks],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_stride,latstride,text_dlat,lonstride,text_dlon],
+                                           layout=ipyw.Layout(justify_content='center'))])],                                                                                
+                               layout=ipyw.Layout(justify_content='space-around')),            
+                    # SECOND ROW
+                    ipyw.HBox([ipyw.VBox([
+                                 # Map extent
+                                 ipyw.HBox([txt_coord],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_dist],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_n,nlatbuf,text_deg,wlonbuf,text_deg,text_w],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_s,slatbuf,text_deg,elonbuf,text_deg,text_e],
+                                           layout=ipyw.Layout(justify_content='center'))]),   
+                               ipyw.VBox([
+                                 # Display stations
+                                 ipyw.HBox([txt_stns],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_loc,incl_loc],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_col,stns_col],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_dots,dot_size],layout=ipyw.Layout(
+                                                                       justify_content='center'))])],
+                               layout=ipyw.Layout(justify_content='space-around'))
+                     ])
+    
+    display(ui)
+    
+    #----------------------------------------------------------------------------------------------
+    # Button to create figure
+    #----------------------------------------------------------------------------------------------
+    
+    # Output shown when button is clicked
+    fig_output = ipyw.Output()
+    def create_fig(button):
+        
+        # Construct spatial map
+        with fig_output:
+            fig_output.clear_output(wait=True)
+            fig = plots.spatialmap_tmax_plot(var=var,meta=meta,location_name=location_name,nlat=float(nlat),
+                                       slat=float(slat),wlon=float(wlon),elon=float(elon),
+                                       timespan=timespan.value,sngl_md=sngl_md.value,sngl_yr=sngl_yr.value,
+                                       mult_md1=mult_md1.value,mult_yr1=mult_yr1.value,
+                                       mult_md2=mult_md2.value,mult_yr2=mult_yr2.value,
+                                       incl_loc=incl_loc.value,stns_col=stns_col.value,
+                                       dot_size=dot_size.value,cmap=cmap.value,cbar=cbar.value,
+                                       incl_ticks=incl_ticks.value,nlatbuf=nlatbuf.value,
+                                       slatbuf=slatbuf.value,wlonbuf=wlonbuf.value,
+                                       elonbuf=elonbuf.value,latstride=latstride.value,
+                                       lonstride=lonstride.value)
+                
+            # Button to download figure
+            pdf_output = ipyw.Output()
+            def download_pdf(button):
+                pdf_filename = 'figure.pdf'
+                pdf_opts(fig=fig,pdf_output=pdf_output,pdf_filename=pdf_filename)
+            pdf_but = ipyw.Button(description='Download Figure',layout={'width':'140px'})
+            pdf_but.on_click(download_pdf)
+            button_box = ipyw.VBox([ipyw.HBox([pdf_but],layout=ipyw.Layout(justify_content='center')),
+                                    ipyw.HBox([pdf_output],layout=ipyw.Layout(justify_content='center'))])
+            display(button_box)
+        
+            # Show map on screen
+            plt.show()
+        
+    # Create button and activate click
+    fig_button = ipyw.Button(description='Click Here to Create Figure',layout=ipyw.Layout(width='200px'))        
+    fig_button.on_click(create_fig)
+    
+    # Create button widget
+    button_widget = ipyw.VBox([ipyw.HBox([fig_button],layout=ipyw.Layout(justify_content='center')),
+                               ipyw.HBox([fig_output],layout=ipyw.Layout(justify_content='center'))])
+    display(button_widget)
 
 #======================================================================================================
 # spatialmap_pcpn_widget
@@ -2204,7 +2452,7 @@ def spatialmap_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
                               layout=ipyw.Layout(width='75px'))
     sngl_yr   = ipyw.Dropdown(options=np.arange(1950,datetime.now().year+1)[::-1],value=2023,
                               layout=ipyw.Layout(width='70px'))
-    text_mult = ipyw.Label(value='If multiple days',layout=ipyw.Layout(width='90px'))
+    text_mult = ipyw.Label(value='If multiple days',layout=ipyw.Layout(width='100px'))
     text_to   = ipyw.Label(value='to',layout=ipyw.Layout(width='20px'))
     mult_md1  = ipyw.Dropdown(options=list(zip(tuple_str,tuple_num)),value='09-01',
                               layout=ipyw.Layout(width='75px'))
@@ -2228,15 +2476,15 @@ def spatialmap_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
     stns_col = ipyw.Dropdown(options=[('Black','k'),('Red','r'),('White','w')],# will add colored by value later
                              value='k',layout=ipyw.Layout(width='80px'))
     text_dots = ipyw.Label(value='Station dot size',layout=ipyw.Layout(width='100px'))
-    dot_size  = ipyw.IntSlider(value=3,min=1,max=10,step=1,orientation='horizontal',
+    dot_size  = ipyw.FloatSlider(value=1,min=0.1,max=3.1,step=0.1,orientation='horizontal',
                                layout=ipyw.Layout(width='140px'))
-
+    
     # Map extent
     txt_coord = ipyw.HTML(value=f'<h3><a style="color: black; "href={url_spatialmap} target="_blank" ' +
                                 'onmouseover="this.style.textDecoration=\'underline\'" '+
                                 'onmouseout="this.style.textDecoration=\'none\'"'+
-                                '>Map extent</a></h3>')
-    text_dist = ipyw.Label(value='Distance from query region',layout=ipyw.Layout(width='160px'))
+                                '>Map extent</a></h3>',layout=ipyw.Layout(margin='0 0 -20px 0'))
+    text_dist = ipyw.Label(value='Distance from query region',layout=ipyw.Layout(width='170px'))
     text_n    = ipyw.Label(value='North',layout=ipyw.Layout(width='40px'))
     text_s    = ipyw.Label(value='South',layout=ipyw.Layout(width='40px'))
     text_w    = ipyw.Label(value='West',layout=ipyw.Layout(width='40px'))
@@ -2262,42 +2510,7 @@ def spatialmap_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
     text_dlon   = ipyw.Label(value='° lon',layout=ipyw.Layout(width='30px'))
     latstride   = ipyw.FloatText(value=1.,layout=ipyw.Layout(width='50px'))
     lonstride   = ipyw.FloatText(value=1.,layout=ipyw.Layout(width='50px'))  
-    
-    #----------------------------------------------------------------------------------------------
-    # Button to update figure
-    #----------------------------------------------------------------------------------------------
-    
-    # Create button
-    update_button = ipyw.Button(description='Update Figure',layout=ipyw.Layout(width='150px'))
- 
-    # Define function that is run when button is clicked
-    def update_fig(button):
-       
-       print('Button click worked!')       
- 
-       # # Clear figure output and redisplay ipywidgets
-       # clear_output(wait=True)
-       # display(ui)             # ui is defined below
-       # 
-       # # Print message to users
-       # if timespan.value == 'Multiple Days':
-       #     print('Data is being retrieved! This process may take several minutes if query is large!')
-       # 
-       # # Run figure again
-       # plots.spatialmap_pcpn_plot(var=var,meta=meta,location_name=location_name,nlat=float(nlat),
-       #                            slat=float(slat),wlon=float(wlon),elon=float(elon),
-       #                            timespan=timespan.value,sngl_md=sngl_md.value,sngl_yr=sngl_yr.value,
-       #                            mult_md1=mult_md1.value,mult_yr1=mult_yr1.value,
-       #                            mult_md2=mult_md2.value,mult_yr2=mult_yr2.value,stats=stats.value,
-       #                            incl_loc=incl_loc.value,stns_col=stns_col.value,
-       #                            dot_size=dot_size.value,cmap=cmap.value,incl_ticks=incl_ticks.value,
-       #                            nlatbuf=nlatbuf.value,slatbuf=slatbuf.value,wlonbuf=wlonbuf.value,
-       #                            elonbuf=elonbuf.value,latstride=latstride.value,
-       #                            lonstride=lonstride.value)
-        
-    # On click
-    update_button.on_click(update_fig)
- 
+
     #----------------------------------------------------------------------------------------------
     # Layout for dropdowns
     #----------------------------------------------------------------------------------------------
@@ -2317,14 +2530,13 @@ def spatialmap_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                                                      justify_content='center'))]),
                                
                                ipyw.VBox([
-                                 # Display stations
-                                 ipyw.HBox([txt_stns],layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([text_loc,incl_loc],
+                                 # Map properties
+                                 ipyw.HBox([txt_map],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_cmap,cmap],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_ticks,incl_ticks],
                                            layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([text_col,stns_col],
-                                           layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([text_dots,dot_size],layout=ipyw.Layout(
-                                                                       justify_content='center'))])],                                                                                
+                                 ipyw.HBox([text_stride,latstride,text_dlat,lonstride,text_dlon],
+                                           layout=ipyw.Layout(justify_content='center'))])],                                                                                
                                layout=ipyw.Layout(justify_content='space-around')),            
                     # SECOND ROW
                     ipyw.HBox([ipyw.VBox([
@@ -2335,41 +2547,61 @@ def spatialmap_pcpn_widget(var,meta,location_name,nlat,slat,wlon,elon):
                                            layout=ipyw.Layout(justify_content='center')),
                                  ipyw.HBox([text_s,slatbuf,text_deg,elonbuf,text_deg,text_e],
                                            layout=ipyw.Layout(justify_content='center'))]),   
-                               ipyw.VBox([
-                                 # Map properties
-                                 ipyw.HBox([txt_map],layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([text_cmap,cmap],layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([text_ticks,incl_ticks],
+                               ipyw.VBox([                               
+                                 # Display stations
+                                 ipyw.HBox([txt_stns],layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_loc,incl_loc],
                                            layout=ipyw.Layout(justify_content='center')),
-                                 ipyw.HBox([text_stride,latstride,text_dlat,lonstride,text_dlon],
-                                           layout=ipyw.Layout(justify_content='center'))])],
-                               layout=ipyw.Layout(justify_content='space-around')),
-                     # THIRD ROW
-                     ipyw.HBox([update_button],layout=ipyw.Layout(justify_content='space-around'))
+                                 ipyw.HBox([text_col,stns_col],
+                                           layout=ipyw.Layout(justify_content='center')),
+                                 ipyw.HBox([text_dots,dot_size],layout=ipyw.Layout(
+                                                                       justify_content='center'))])],
+                               layout=ipyw.Layout(justify_content='space-around'))
                      ])
     
-    #----------------------------------------------------------------------------------------------
-    # Display inital plot that gets updated with button click
-    #----------------------------------------------------------------------------------------------
-    
-    # Initial display of ipywidgets
     display(ui)
     
-    # Initial display of plot
-    plots.spatialmap_pcpn_plot(var=var,meta=meta,location_name=location_name,nlat=float(nlat),
-                               slat=float(slat),wlon=float(wlon),elon=float(elon),
-                               timespan=timespan.value,sngl_md=sngl_md.value,sngl_yr=sngl_yr.value,
-                               mult_md1=mult_md1.value,mult_yr1=mult_yr1.value,
-                               mult_md2=mult_md2.value,mult_yr2=mult_yr2.value,stats=stats.value,
-                               incl_loc=incl_loc.value,stns_col=stns_col.value,
-                               dot_size=dot_size.value,cmap=cmap.value,incl_ticks=incl_ticks.value,
-                               nlatbuf=nlatbuf.value,slatbuf=slatbuf.value,wlonbuf=wlonbuf.value,
-                               elonbuf=elonbuf.value,latstride=latstride.value,lonstride=lonstride.value)
-
-
-
-
-
-
-
-
+    #----------------------------------------------------------------------------------------------
+    # Button to create figure
+    #----------------------------------------------------------------------------------------------
+    
+    # Output shown when button is clicked
+    fig_output = ipyw.Output()
+    def create_fig(button):
+        
+        # Construct spatial map
+        with fig_output:
+            fig_output.clear_output(wait=True)
+            fig = plots.spatialmap_pcpn_plot(var=var,meta=meta,location_name=location_name,nlat=float(nlat),
+                                       slat=float(slat),wlon=float(wlon),elon=float(elon),
+                                       timespan=timespan.value,sngl_md=sngl_md.value,sngl_yr=sngl_yr.value,
+                                       mult_md1=mult_md1.value,mult_yr1=mult_yr1.value,
+                                       mult_md2=mult_md2.value,mult_yr2=mult_yr2.value,stats=stats.value,
+                                       incl_loc=incl_loc.value,stns_col=stns_col.value,
+                                       dot_size=dot_size.value,cmap=cmap.value,incl_ticks=incl_ticks.value,
+                                       nlatbuf=nlatbuf.value,slatbuf=slatbuf.value,wlonbuf=wlonbuf.value,
+                                       elonbuf=elonbuf.value,latstride=latstride.value,
+                                       lonstride=lonstride.value)
+                
+            # Button to download figure
+            pdf_output = ipyw.Output()
+            def download_pdf(button):
+                pdf_filename = 'figure.pdf'
+                pdf_opts(fig=fig,pdf_output=pdf_output,pdf_filename=pdf_filename)
+            pdf_but = ipyw.Button(description='Download Figure',layout={'width':'140px'})
+            pdf_but.on_click(download_pdf)
+            button_box = ipyw.VBox([ipyw.HBox([pdf_but],layout=ipyw.Layout(justify_content='center')),
+                                    ipyw.HBox([pdf_output],layout=ipyw.Layout(justify_content='center'))])
+            display(button_box)
+        
+            # Show map on screen
+            plt.show()
+        
+    # Create button and activate click
+    fig_button = ipyw.Button(description='Click Here to Create Figure',layout=ipyw.Layout(width='200px'))        
+    fig_button.on_click(create_fig)
+    
+    # Create button widget
+    button_widget = ipyw.VBox([ipyw.HBox([fig_button],layout=ipyw.Layout(justify_content='center')),
+                               ipyw.HBox([fig_output],layout=ipyw.Layout(justify_content='center'))])
+    display(button_widget)
