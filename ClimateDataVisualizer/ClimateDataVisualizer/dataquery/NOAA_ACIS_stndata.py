@@ -527,7 +527,7 @@ def sids_multistn_daily(elem: str, sids: list,
     #-------------------------------------------------------------------------------------------------
 
     # Confirm type of 'sids'
-    sids = list(sids)
+    sids = [sids] if type(sids) == str else sids
 
     # Only pull metadata on required parameters
     metadata = stnmeta.sids_metadata(elem=elem,items='name,state,sids,ll,valid_daterange',sids=sids)
@@ -787,7 +787,7 @@ def bbox_multistn_dataviz(elem: str, stndata_df: pd.DataFrame, stnmeta_df: pd.Da
                             linestyle='-',facecolor='None',edgecolor='k',linewidth=0.25,zorder=0.1));
 
     # Add text for data source
-    ax3.text(0.5,-0.05,'Data Source: NOAA ACIS (http://data.rcc-acis.org)\nImage: Alex Thompson (@ajtclimate)',
+    ax3.text(0.5,-0.05,'Data Source: NOAA ACIS (http://data.rcc-acis.org)\nImage: climate-data-viz.com',
              ha='center',va='center',fontsize=8,transform=ax3.transAxes)
 
     #--------------------------------------------------------------------------------------------------
@@ -960,7 +960,7 @@ def sids_multistn_dataviz(elem: str, stndata_df: pd.DataFrame, stnmeta_df: pd.Da
                              linestyle='-',facecolor='None',edgecolor='k',linewidth=0.25,zorder=0.1));
 
     # Add text for data source
-    ax3.text(0.5,-0.05,'Data Source: NOAA ACIS (http://data.rcc-acis.org)\nImage: Alex Thompson (@ajtclimate)',
+    ax3.text(0.5,-0.05,'Data Source: NOAA ACIS (http://data.rcc-acis.org)\nImage: climate-data-viz.com',
              ha='center',va='center',fontsize=8,transform=ax3.transAxes)
 
     #--------------------------------------------------------------------------------------------------
@@ -970,3 +970,185 @@ def sids_multistn_dataviz(elem: str, stndata_df: pd.DataFrame, stnmeta_df: pd.Da
     if savefig == True:
      plt.savefig('./'+folderpath+'/'+str(elem)+'_query_sids_list'+filesuf,bbox_inches='tight')
 
+#=====================================================================================================
+# Trying to see if this will work for terminal window
+#=====================================================================================================
+    
+def singlestn_daily_term(elem: str, sid: str, sdate: str, edate: str,
+
+                    # Optional parameters for all elems
+                    M: float = float('NaN'),
+
+                    # Optional parameters for elems 'pcpn' and 'snow'
+                    T: float = 0.00001, mdr: int = 50, mdr_opt: str = 'avg', 
+                    mdr_A: str = 'equal', mdr_S: str = '0',
+
+                    # Optional parameters for printing results
+                    print_results: bool = True, print_md: bool = True
+
+                    ):
+
+    '''
+    Creates float array of daily data from a single station from NOAA ACIS. Requires the station ID 
+    (sids) and requested starting date (sdate) and ending date (edate). Find sids, sdate, and edate
+    by using metadata query functions in 'query_stnmeta.py' or by using the xmACIS2 site search at:
+    https://xmacis.rcc-acis.org/ 
+
+    Required Parameters
+    --------------------
+    elem
+     class: 'string', Single variable element to include. Example: 'maxt'
+                      Possible options are 'maxt','mint','avgt','pcpn','snow','snwd'.
+
+    sid
+     class: 'string', Station ID, also known as sids. This is required for identifying the station
+                      from which data is queried. 
+
+    sdate
+     class: 'string', Starting date for queried data in form 'YYYY-DD-MM'.  
+
+    edate 
+     class: 'string', Ending date for queried data in form 'YYYY-DD-MM'.
+
+    Optional parameters for all elems
+    ----------------------------------
+    M                Default = float('NaN')
+     class: 'float', Value to which missing values ('M') are converted.
+
+    Optional parameters for elems 'pcpn' and 'snow'
+    -----------------------------------------------
+    T                Default = 0.00001 
+     class: 'float', Value to which trace values ('T') are converted.
+
+    mdr                Default = 50 
+     class: 'integer', Multi-day range, the number of days this script will search from S=0 to find
+                       the final multi-day even with form '[sum]A'.  
+
+    mdr_opt           Default = 'avg' 
+     class: 'string', Option for handling multi-day events. Currently, this script only supports
+                      placing the average daily value of the multi-day event into each day within
+                      the event (e.g., 3 day event that totaled 0.9 inches, each day's value will
+                      equal 0.3 inches).
+
+    mdr_A             Default = 'equal'
+     class: 'string', Option for handling special data cases where 'A' exists without a preceding 'S'.
+                      Currently, this script only supports 'equal', which sets the daily value equal
+                      to the value next to the 'A' (e.g., 2.3A becomes 2.3). These special cases are
+                      shown if 'print_result' = True.
+
+    mdr_S             Default = '0' 
+     class: 'string', Option for handling special data cases where 'S' exists without a following 'A'.
+                      Currently, this script only supports '0', which sets these values to 0. These
+                      special cases are shown if 'print_result' = True. 
+
+    Optional parameters for printing results in real-time
+    -----------------------------------------------------
+    print_results   Default = True
+     class: 'bool', Print real-time results of station query to interface.
+
+    print_md        Default = True
+     class: 'bool', Print information about multi-day event processing if found while querying data.
+
+    Returns
+    ---------------------
+    output: class: 'numpy.ndarray'
+    '''
+
+    import urllib.request
+    
+    #-------------------------------------------------------------------------------------------------
+    # Query raw data from json request    
+    #-------------------------------------------------------------------------------------------------
+
+    # Input dictionary of station id, start date, and end date 
+    input_dict = {'sid': sid,'elems': elem,'sdate':sdate,'edate':edate}
+
+    # Get json data from url
+    json_response = urllib.request.urlopen(urllib.request.Request('http://data.rcc-acis.org/StnData',
+                                           urllib.parse.urlencode({'params':json.dumps(input_dict)}
+                                           ).encode('utf-8'),{'Accept':'application/json'})).read()
+    raw = json.loads(json_response)
+
+    #-------------------------------------------------------------------------------------------------
+    # Read in data to pd DataFrame and process missing and trace values
+    #-------------------------------------------------------------------------------------------------
+    
+    # pd.DataFrame named 'Station' contains raw data 
+    Station = pd.DataFrame(raw['data'],columns=['Date',elem])
+    
+    # Set M to specified value 
+    Station[elem] = np.where(Station[elem] == 'M', M, Station[elem])
+
+    #-------------------------------------------------------------------------------------------------
+    # Further processing if elem is 'pcpn' or 'snow' or 'snwd' 
+    #-------------------------------------------------------------------------------------------------
+
+    if elem == 'pcpn' or elem == 'snow' or elem == 'snwd':
+
+     # Set T to specified value
+     Station[elem] = np.where(Station[elem] == 'T', T, Station[elem])
+
+     #-------------------------------------------------------------------------------------------------
+     # Process multi-day events (i.e., when data shows a value like 'S' ... '2.0A') 
+     #-------------------------------------------------------------------------------------------------
+
+     # Process normal multi-day events, where data shows S->A
+
+     for sa in range(len(Station[elem])):
+      if Station[elem].iloc[sa] == 'S':
+       # First, control for multi-day range (mdr) extending beyond bounds of record
+       if (len(Station[elem]) - Station[elem].index[sa]) < mdr:
+        for x in range(len(Station[elem]) - Station[elem].index[sa]):
+         if ('A' in str(Station[elem].iloc[sa+x])) == True:
+          if mdr_opt == 'avg':
+           # Set pcpn/snow values from S->A as average of A value across all relevant days
+           Station[elem].iloc[sa:sa+x+1] = float(Station[elem].iloc[sa+x].replace('A','')) / (x+1)
+          break
+       # Next, calculate all other multi-day range (mdr) events 
+       else:
+        for x in range(mdr):                          # check next n days for the A
+         if ('A' in str(Station[elem].iloc[sa+x])) == True:
+          if mdr_opt == 'avg':
+           # Set pcpn/snow values from S->A as average of A value across all relevant days
+           Station[elem].iloc[sa:sa+x+1] = float(Station[elem].iloc[sa+x].replace('A','')) / (x+1)
+          break
+                         
+     # Process where any 'A' values remain, which means there was no 'S' before  
+
+     if Station[elem].str.contains('A').any() == True:
+      if mdr_A == 'equal':
+         if print_md == True:
+          print(sid+' has standalone A, setting equal to that days value')
+         Aind = Station[elem].index[Station[elem].str.contains('A') == True].values
+         # Manage if the station has more than one of these special data cases
+         if len(Aind) > 0:
+          for Aelem in range(len(Aind)):
+           if print_md == True:
+            Adate = pd.date_range(start=sdate,end=edate,freq='D')[Aind][Aelem].date() # find date of standalone
+            print(str(Adate)+': '+Station[elem][int(Aind[Aelem])]+'->'+\
+                             str(np.float64(Station[elem][int(Aind[Aelem])].replace('A',''))))
+           Station[elem][Aind[Aelem]] = np.float64(Station[elem][Aind[Aelem]].replace('A',''))
+
+     # Process where any 'S' values remain, which means there is no 'A' afterwards 
+
+     if Station[elem].str.contains('S').any() == True:
+      if print_md == True:   
+       print(sid+' has standalone S, setting to 0')
+      Sind = Station[elem].index[Station[elem].str.contains('S') == True].values
+      # Manage if the station has more than one of these special data cases
+      if len(Sind) > 0:
+       for Selem in range(len(Sind)):
+        if print_md == True:
+         Sdate = pd.date_range(start=sdate,end=edate,freq='D')[Sind][Selem].date() # find date of standalone   
+         print(str(Sdate)+': '+Station[elem][int(Sind[Selem])]+'->0')
+        Station[elem][Sind[Selem]] = 0
+
+    #-------------------------------------------------------------------------------------------------
+    # Output final array as a float array
+    #-------------------------------------------------------------------------------------------------
+
+    return np.float32(Station[elem])
+    
+    
+    
+    
